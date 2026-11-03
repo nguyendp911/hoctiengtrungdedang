@@ -8,12 +8,17 @@ struct HSKUnit: Identifiable {
     var id: Int { no }
 }
 
-/// Lộ trình HSK: cấp độ, bài học và số từ chính thức để so sánh
+/// Lộ trình HSK theo chuẩn HSK 3.0: cấp 0 (phiên âm), 1 đến 6, và cấp 7-9 gộp chung
 enum Curriculum {
-    static let levels = [1, 2, 3]
+    /// 0 = nhập môn phiên âm, 1...6 = các cấp, 7 = cấp 7-9 (chuẩn 3.0 gộp ba cấp này)
+    static let levels = Array(0...7)
 
-    /// Số từ mới của từng cấp theo chuẩn HSK 2.0 (cộng dồn: 150, 300, 600)
-    static let officialNewWords = [1: 150, 2: 150, 3: 300]
+    static func name(_ level: Int) -> String {
+        level == 7 ? "HSK 7–9" : "HSK \(level)"
+    }
+
+    /// Số từ mới của từng cấp theo chuẩn HSK 3.0 (cộng dồn khoảng 11.000 từ)
+    static let officialNewWords = [1: 500, 2: 772, 3: 973, 4: 1000, 5: 1071, 6: 1140, 7: 5636]
 
     /// Từ của một cấp, xếp theo bài rồi theo thứ tự trong file
     static func words(level: Int, in phrases: [Phrase]) -> [Phrase] {

@@ -20,9 +20,11 @@ struct Phrase: Codable, Identifiable, Hashable {
     let unitNo: Int?
     let unit: String?
 
-    /// Cấp HSK 1, 2, 3... suy ra từ chủ đề "HSK n"; nil nếu không phải từ HSK
+    /// Cấp HSK 1...6 suy ra từ chủ đề "HSK n", cấp 7 là "HSK 7-9"; nil nếu không phải từ HSK
     var hskLevel: Int? {
-        topic.hasPrefix("HSK ") ? Int(topic.dropFirst(4)) : nil
+        guard topic.hasPrefix("HSK ") else { return nil }
+        let rest = topic.dropFirst(4)
+        return rest.hasPrefix("7") ? 7 : Int(rest)
     }
 
     struct Example: Codable, Hashable {

@@ -4,16 +4,18 @@ import SwiftUI
 enum PathSheet: Identifiable {
     case flashcards([Phrase])
     case quiz(title: String, pool: [Phrase], length: Int, passMark: Double?)
+    case tones
 
     var id: String {
         switch self {
         case .flashcards: return "flashcards"
         case .quiz: return "quiz"
+        case .tones: return "tones"
         }
     }
 }
 
-/// Tab "Lộ trình": chọn cấp HSK, kế hoạch học hôm nay, danh sách bài, thi thử
+/// Tab "Lộ trình": chọn cấp (HSK 0 đến 7-9), kế hoạch hôm nay, danh sách bài, thi thử
 struct PathView: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage("pathLevel") private var level = 1
@@ -27,54 +29,150 @@ struct PathView: View {
         NavigationStack {
             List {
                 Section {
-                    Picker("Cấp độ", selection: $level) {
-                        ForEach(Curriculum.levels, id: \.self) { Text("HSK \($0)").tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
+                    levelChips
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
                 }
 
-                Section { overviewCard }
-                Section("Kế hoạch hôm nay") { planCard }
-
-                Section("Các bài học") {
-                    if units.isEmpty {
-                        Text("Chưa có từ HSK \(level) trong app.")
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(units) { unit in
-                        NavigationLink {
-                            UnitDetailView(unit: unit, level: level)
-                        } label: {
-                            unitRow(unit)
-                        }
-                    }
-                }
-
-                Section {
-                    Button {
-                        sheet = .quiz(title: "Thi thử HSK \(level)", pool: words, length: 20, passMark: 0.6)
-                    } label: {
-                        Label("Thi thử HSK \(level)", systemImage: "doc.text.magnifyingglass")
-                            .font(.headline)
-                    }
-                    .disabled(words.count < 4)
-                } footer: {
-                    Text("20 câu trộn các từ của HSK \(level), đạt từ 60%. Bài thi này kiểm tra từ vựng, không thay thế đề HSK thật.")
+                if level == 0 {
+                    introContent
+                } else {
+                    levelContent
                 }
             }
             .navigationTitle("Lộ trình")
         }
         .sheet(item: $sheet) { item in
-            switch item {
-            case .flashcards(let pool):
-                FlashcardView(pool: pool) { model.reloadProgress() }
-            case .quiz(let title, let pool, let length, let passMark):
-                QuizView(pool: pool, all: model.phrases, length: length, passMark: passMark, title: title) {
-                    model.reloadProgress()
+            sheetContent(item)
+        }
+    }
+
+    // MARK: Chọn cấp
+
+    private var levelChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Curriculum.levels, id: \.self) { value in
+                    let isOn = level == value
+                    Button {
+                        level = value
+                    } label: {
+                        Text(Curriculum.name(value))
+                            .font(.subheadline.weight(isOn ? .semibold : .regular))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(isOn ? Color.accentColor : Color(.secondarySystemBackground), in: Capsule())
+                            .foregroundStyle(isOn ? Color.white : Color.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isOn ? .isSelected : [])
                 }
             }
+            .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: HSK 0
+
+    @ViewBuilder
+    private var introContent: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("HSK 0 · Nhập môn phiên âm").font(.title3.weight(.bold))
+                Text("Chưa có cấp HSK 0 chính thức. Đây là phần làm quen trước khi vào HSK 1: học đọc pinyin, phân biệt 4 thanh điệu, rồi mới học từ.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+        Section("Bài học") {
+            NavigationLink {
+                PinyinChartView()
+            } label: {
+                introRow("Bảng phiên âm", subtitle: "23 thanh mẫu, 36 vận mẫu, nghe từng âm", icon: "textformat.abc", color: .blue)
+            }
+            Button {
+                sheet = .tones
+            } label: {
+                introRow("Luyện thanh điệu", subtitle: "Xem đường cao độ của 4 thanh, nghe và chọn thanh", icon: "waveform", color: .orange)
+            }
+            .tint(.primary)
+        }
+        Section {
+            Button {
+                level = 1
+            } label: {
+                Label("Sẵn sàng, sang HSK 1", systemImage: "arrow.right.circle.fill")
+                    .font(.headline)
+            }
+        }
+    }
+
+    private func introRow(_ title: String, subtitle: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+                .frame(width: 40, height: 40)
+                .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body.weight(.medium))
+                Text(subtitle).font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    // MARK: HSK 1 trở lên
+
+    @ViewBuilder
+    private var levelContent: some View {
+        Section { overviewCard }
+
+        if words.isEmpty {
+            Section {
+                Text("\(Curriculum.name(level)) đang được biên soạn, chưa có từ trong app. Từ sẽ được bổ sung từng cấp, mỗi từ đủ nghĩa tiếng Việt, âm Hán Việt, cách đọc và câu ví dụ.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            Section("Kế hoạch hôm nay") { planCard }
+
+            Section("Các bài học") {
+                ForEach(units) { unit in
+                    NavigationLink {
+                        UnitDetailView(unit: unit, level: level)
+                    } label: {
+                        unitRow(unit)
+                    }
+                }
+            }
+
+            Section {
+                Button {
+                    sheet = .quiz(title: "Thi thử \(Curriculum.name(level))", pool: words, length: 20, passMark: 0.6)
+                } label: {
+                    Label("Thi thử \(Curriculum.name(level))", systemImage: "doc.text.magnifyingglass")
+                        .font(.headline)
+                }
+                .disabled(words.count < 4)
+            } footer: {
+                Text("20 câu trộn các từ của \(Curriculum.name(level)), đạt từ 60%. Bài thi này kiểm tra từ vựng, không thay thế đề HSK thật.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sheetContent(_ item: PathSheet) -> some View {
+        switch item {
+        case .flashcards(let pool):
+            FlashcardView(pool: pool) { model.reloadProgress() }
+        case .quiz(let title, let pool, let length, let passMark):
+            QuizView(pool: pool, all: model.phrases, length: length, passMark: passMark, title: title) {
+                model.reloadProgress()
+            }
+        case .tones:
+            ToneDrillView(pool: model.phrases) { model.reloadProgress() }
         }
     }
 
@@ -89,7 +187,7 @@ struct PathView: View {
         let days = (untouched + perDay - 1) / perDay
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text("HSK \(level)").font(.title2.weight(.bold))
+                Text(Curriculum.name(level)).font(.title2.weight(.bold))
                 Spacer()
                 Text("\(done)/\(total) từ đã thuộc")
                     .font(.subheadline)
@@ -97,11 +195,13 @@ struct PathView: View {
             }
             ProgressView(value: Double(done), total: Double(max(total, 1)))
                 .accessibilityLabel("Đã thuộc \(done) trên \(total) từ")
-            Text(days > 0
-                 ? "Còn \(untouched) từ chưa học. Với \(newPerDay) từ mới mỗi ngày, bạn học xong trong khoảng \(days) ngày."
-                 : "Bạn đã học qua toàn bộ từ HSK \(level) có trong app.")
-                .font(.footnote)
-            Text("App hiện có \(total) trong \(official) từ mới của HSK \(level). Thêm từ bằng cách sửa file từ vựng trên GitHub.")
+            if total > 0 {
+                Text(days > 0
+                     ? "Còn \(untouched) từ chưa học. Với \(newPerDay) từ mới mỗi ngày, bạn học xong trong khoảng \(days) ngày."
+                     : "Bạn đã học qua toàn bộ từ \(Curriculum.name(level)) có trong app.")
+                    .font(.footnote)
+            }
+            Text("App hiện có \(total) trong \(official) từ của \(Curriculum.name(level)) (chuẩn HSK 3.0).")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -144,7 +244,7 @@ struct PathView: View {
             .opacity(finished && candidates.isEmpty ? 0.4 : 1)
 
             Text(finished
-                 ? (candidates.isEmpty ? "Bạn đã hết từ mới ở HSK \(level)." : "Hôm nay bạn đã xong kế hoạch. Học thêm nếu còn sức.")
+                 ? (candidates.isEmpty ? "Bạn đã hết từ mới ở \(Curriculum.name(level))." : "Hôm nay bạn đã xong kế hoạch. Học thêm nếu còn sức.")
                  : "Thẻ lật gồm từ đến hạn trước, rồi từ mới của bài tiếp theo. Đổi số từ mới mỗi ngày trong Cài đặt.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -243,7 +343,7 @@ struct UnitDetailView: View {
                 }
             }
         }
-        .navigationTitle("Bài \(unit.no) · HSK \(level)")
+        .navigationTitle("Bài \(unit.no) · \(Curriculum.name(level))")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $sheet) { item in
             switch item {
@@ -253,6 +353,8 @@ struct UnitDetailView: View {
                 QuizView(pool: pool, all: model.phrases, length: length, passMark: passMark, title: title) {
                     model.reloadProgress()
                 }
+            case .tones:
+                ToneDrillView(pool: model.phrases) { model.reloadProgress() }
             }
         }
     }
