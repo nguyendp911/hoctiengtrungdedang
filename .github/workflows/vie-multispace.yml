@@ -26,7 +26,7 @@ jobs:
 
       - name: Build unsigned iOS app
         run: |
-          set +e
+          set -o pipefail
           xcodebuild \
             -project VieMultiSpace/VieMultiSpace.xcodeproj \
             -scheme VieMultiSpace \
@@ -37,15 +37,14 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build > build.log 2>&1
-          STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "========== COMPILATION ERRORS =========="
-            grep -E "error:" build.log || true
-            echo "========== LAST 50 LINES =========="
-            tail -n 50 build.log
-            exit $STATUS
-          fi
+            build 2>&1 | tee xcodebuild.log
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: xcodebuild.log
 
       - name: Package IPA for Sideloadly
         run: |
