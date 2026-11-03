@@ -7,6 +7,10 @@ final class Speaker {
 
     private let synthesizer = AVSpeechSynthesizer()
 
+    func stop() {
+        synthesizer.stopSpeaking(at: .immediate)
+    }
+
     func speak(_ text: String, slow: Bool = false) {
         // .playback để vẫn nghe được khi gạt công tắc im lặng
         let session = AVAudioSession.sharedInstance()

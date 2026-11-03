@@ -103,8 +103,12 @@ struct HanziWidgetView: View {
                     Text(phrase.meaningVi)
                         .font(.footnote.weight(.semibold))
                     Spacer()
-                    Image(systemName: "speaker.wave.2.fill")
-                        .foregroundStyle(.tint)
+                    Button(intent: MarkLearnedIntent(phraseID: phrase.id)) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
                 }
             }
             .lineLimit(1)

@@ -4,7 +4,7 @@ import SwiftUI
 struct HanziLockApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
     }
 }

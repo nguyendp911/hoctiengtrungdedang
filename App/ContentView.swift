@@ -1,60 +1,39 @@
 import SwiftUI
-import WidgetKit
 
-struct ContentView: View {
-    @State private var phrases = PhraseStore.load()
+/// Tab "Học": thẻ từ, chọn chủ đề, danh sách từ
+struct LearnView: View {
+    @EnvironmentObject private var model: AppModel
     /// nil = tất cả chủ đề
     @State private var topic: String?
-    /// Câu người dùng vừa chạm vào; nil thì hiện câu của giờ hiện tại
-    @State private var picked: Phrase?
-    @State private var status: String?
-    @State private var isUpdating = false
-    @State private var learned = ProgressStore.learned
-    @State private var isQuizzing = false
 
-    private var shown: [Phrase] { PhraseStore.phrases(in: phrases, topic: topic) }
+    private var shown: [Phrase] { PhraseStore.phrases(in: model.phrases, topic: topic) }
     private var current: Phrase {
-        picked ?? PhraseStore.phrase(at: .now, topic: topic, in: phrases, learned: learned)
+        model.picked ?? PhraseStore.phrase(at: Date(), topic: topic, in: model.phrases, learned: model.learned)
     }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    PhraseCard(phrase: current, isLearned: learned.contains(current.id)) {
+                    PhraseCard(phrase: current, isLearned: model.learned.contains(current.id)) {
                         // Giữ nguyên thẻ đang xem, không nhảy sang từ khác khi vừa đánh dấu
-                        picked = current
-                        toggleLearned(current)
+                        model.picked = current
+                        model.toggleLearned(current)
                     }
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 }
 
                 Section {
-                    TopicPicker(topics: PhraseStore.topics(in: phrases), selection: $topic)
+                    TopicPicker(topics: model.topics, selection: $topic)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
-                }
-
-                Section {
-                    Button {
-                        isQuizzing = true
-                    } label: {
-                        Label("Ôn tập \(topic ?? "tất cả chủ đề")", systemImage: "checklist")
-                            .font(.headline)
-                    }
-                } footer: {
-                    let done = shown.filter { learned.contains($0.id) }.count
-                    VStack(alignment: .leading, spacing: 6) {
-                        ProgressView(value: Double(done), total: Double(max(shown.count, 1)))
-                        Text("Đã thuộc \(done)/\(shown.count) từ. Widget ưu tiên hiện từ chưa thuộc.")
-                    }
                 }
 
                 Section("\(topic ?? "Tất cả") · \(shown.count) từ") {
                     ForEach(shown) { item in
                         Button {
-                            picked = item
+                            model.picked = item
                             Speaker.shared.speak(item.hanzi)
                         } label: {
                             HStack {
@@ -66,7 +45,7 @@ struct ContentView: View {
                                 Text(item.meaningVi)
                                     .font(.subheadline)
                                     .multilineTextAlignment(.trailing)
-                                if learned.contains(item.id) {
+                                if model.learned.contains(item.id) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
                                 }
@@ -74,77 +53,34 @@ struct ContentView: View {
                         }
                         .tint(.primary)
                         .swipeActions {
-                            let isLearned = learned.contains(item.id)
-                            Button(isLearned ? "Chưa thuộc" : "Đã thuộc") { toggleLearned(item) }
+                            let isLearned = model.learned.contains(item.id)
+                            Button(isLearned ? "Chưa thuộc" : "Đã thuộc") { model.toggleLearned(item) }
                                 .tint(isLearned ? .orange : .green)
                         }
                     }
                 }
 
-                Section {
-                    if let status {
-                        Text(status).font(.footnote)
-                    }
-                    Text("Đổi chủ đề trên màn hình khoá: giữ màn hình khoá › Tuỳ chỉnh › chạm vào widget Hán Tự › chọn chủ đề. Kéo danh sách xuống để tải từ mới.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                if let status = model.status {
+                    Section { Text(status).font(.footnote).foregroundStyle(.secondary) }
                 }
             }
             .navigationTitle("Hán Tự")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    if isUpdating {
+                    if model.isUpdating {
                         ProgressView()
                     } else {
                         Button {
-                            Task { await update() }
+                            Task { await model.update() }
                         } label: {
                             Label("Cập nhật từ mới", systemImage: "arrow.clockwise")
                         }
                     }
                 }
             }
-            .refreshable { await update() }
+            .refreshable { await model.update() }
         }
-        .sheet(isPresented: $isQuizzing) {
-            QuizView(pool: shown, all: phrases) { reloadLearned() }
-        }
-        .onChange(of: topic) { picked = nil }
-        .onOpenURL { url in
-            // hanzilock://phrase/<id> — được mở khi chạm vào widget
-            guard url.host == "phrase",
-                  let id = Int(url.lastPathComponent),
-                  let tapped = phrases.first(where: { $0.id == id }) else { return }
-            picked = tapped
-            Speaker.shared.speak(tapped.hanzi)
-        }
-        .task { await update(silent: true) }
-    }
-
-    private func toggleLearned(_ phrase: Phrase) {
-        ProgressStore.setLearned(phrase.id, !learned.contains(phrase.id))
-        reloadLearned()
-    }
-
-    private func reloadLearned() {
-        learned = ProgressStore.learned
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    private func update(silent: Bool = false) async {
-        isUpdating = true
-        defer { isUpdating = false }
-        do {
-            let before = Set(phrases.map(\.id))
-            phrases = try await PhraseStore.refresh()
-            let added = phrases.filter { !before.contains($0.id) }.count
-            WidgetCenter.shared.reloadAllTimelines()
-            if !silent || added > 0 {
-                status = added > 0 ? "Đã thêm \(added) từ mới." : "Đã có bản mới nhất (\(phrases.count) từ)."
-            }
-        } catch {
-            if !silent { status = "Không tải được từ mới. Kiểm tra mạng rồi thử lại." }
-        }
+        .onChange(of: topic) { model.picked = nil }
     }
 }
 
@@ -179,6 +115,7 @@ struct PhraseCard: View {
     let isLearned: Bool
     var onToggleLearned: () -> Void
     @State private var isWriting = false
+    @State private var isSpeaking = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -244,10 +181,13 @@ struct PhraseCard: View {
             .buttonStyle(.plain)
             .padding(.top, 6)
 
-            // Ba nút phụ cùng kích thước: biểu tượng trên, chữ dưới
-            HStack(spacing: 10) {
+            // Bốn nút phụ cùng kích thước: biểu tượng trên, chữ dưới
+            HStack(spacing: 8) {
                 CardTile(title: "Đọc chậm", icon: "tortoise.fill") {
                     Speaker.shared.speak(phrase.hanzi, slow: true)
+                }
+                CardTile(title: "Luyện nói", icon: "mic.fill") {
+                    isSpeaking = true
                 }
                 CardTile(title: "Luyện viết", icon: "pencil.and.outline") {
                     isWriting = true
@@ -263,6 +203,9 @@ struct PhraseCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
         .sheet(isPresented: $isWriting) {
             WritingView(phrase: phrase)
+        }
+        .sheet(isPresented: $isSpeaking) {
+            SpeakingView(phrase: phrase)
         }
     }
 }
@@ -281,9 +224,9 @@ struct CardTile: View {
                     .font(.system(size: 20, weight: .medium))
                     .frame(height: 24)
                 Text(title)
-                    .font(.footnote.weight(.medium))
+                    .font(.caption.weight(.medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
             }
             .foregroundStyle(color)
             .frame(maxWidth: .infinity)
@@ -292,8 +235,4 @@ struct CardTile: View {
         }
         .buttonStyle(.plain)
     }
-}
-
-#Preview {
-    ContentView()
 }

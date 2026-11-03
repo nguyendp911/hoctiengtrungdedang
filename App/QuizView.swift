@@ -148,10 +148,11 @@ struct QuizView: View {
 
     private func start() {
         let learned = ProgressStore.learned
-        // Từ chưa thuộc trước, thêm vài từ đã thuộc để ôn lại
-        let fresh = pool.filter { !learned.contains($0.id) }.shuffled()
-        let review = pool.filter { learned.contains($0.id) }.shuffled()
-        let picked = Array((fresh + review).prefix(Self.length))
+        // Từ đến hạn ôn trước, rồi từ mới, cuối cùng là từ chưa đến hạn
+        let due = pool.filter { ProgressStore.state(of: $0.id) == .due }.shuffled()
+        let new = pool.filter { ProgressStore.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
+        let later = pool.filter { !due.contains($0) && !new.contains($0) }.shuffled()
+        let picked = Array((due + new + later).prefix(Self.length))
 
         questions = picked.map { phrase in
             let asksMeaning = Bool.random()
