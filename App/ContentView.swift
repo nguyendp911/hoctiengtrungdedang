@@ -200,9 +200,32 @@ struct PhraseCard: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
+            if let hanViet = phrase.hanViet {
+                Text("Hán Việt: \(hanViet)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
             Text(phrase.meaningVi)
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
+
+            if let example = phrase.example {
+                Button {
+                    Speaker.shared.speak(example.zh)
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label(example.zh, systemImage: "speaker.wave.1")
+                            .font(.body.weight(.medium))
+                        Text(example.pinyin).font(.footnote).foregroundStyle(.red)
+                        Text(example.vi).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
 
             // Nút chính: phát âm, chiếm cả chiều ngang
             Button {

@@ -12,14 +12,27 @@ struct Phrase: Codable, Identifiable, Hashable {
     let meaningVi: String
     /// Chủ đề, ví dụ "Giao tiếp"
     let topic: String
+    /// Âm Hán Việt, ví dụ "Nễ hảo"
+    let hanViet: String?
+    /// Câu ví dụ (không bắt buộc)
+    let example: Example?
 
-    init(id: Int, hanzi: String, pinyin: String, readingVi: String, meaningVi: String, topic: String) {
+    struct Example: Codable, Hashable {
+        let zh: String
+        let pinyin: String
+        let vi: String
+    }
+
+    init(id: Int, hanzi: String, pinyin: String, readingVi: String, meaningVi: String, topic: String,
+         hanViet: String? = nil, example: Example? = nil) {
         self.id = id
         self.hanzi = hanzi
         self.pinyin = pinyin
         self.readingVi = readingVi
         self.meaningVi = meaningVi
         self.topic = topic
+        self.hanViet = hanViet
+        self.example = example
     }
 
     init(from decoder: Decoder) throws {
@@ -31,9 +44,12 @@ struct Phrase: Codable, Identifiable, Hashable {
         meaningVi = try c.decode(String.self, forKey: .meaningVi)
         // Từ không ghi chủ đề thì xếp vào "Khác"
         topic = try c.decodeIfPresent(String.self, forKey: .topic) ?? "Khác"
+        hanViet = try c.decodeIfPresent(String.self, forKey: .hanViet)
+        example = try? c.decodeIfPresent(Example.self, forKey: .example)
     }
 
-    static let sample = Phrase(id: 0, hanzi: "你好", pinyin: "nǐ hǎo", readingVi: "nỉ hảo", meaningVi: "Xin chào", topic: "Giao tiếp")
+    static let sample = Phrase(id: 0, hanzi: "你好", pinyin: "nǐ hǎo", readingVi: "nỉ hảo", meaningVi: "Xin chào",
+                               topic: "Giao tiếp", hanViet: "Nễ hảo")
 
     /// Link mở app từ widget: hanzilock://phrase/<id>
     var deepLink: URL { URL(string: "hanzilock://phrase/\(id)")! }
