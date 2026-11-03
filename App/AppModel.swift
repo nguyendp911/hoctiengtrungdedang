@@ -6,6 +6,7 @@ import WidgetKit
 final class AppModel: ObservableObject {
     @Published var phrases = PhraseStore.load()
     @Published var learned = ProgressStore.learned
+    @Published var favorites = ProgressStore.favorites
     /// Câu người dùng vừa chọn (chạm vào danh sách, widget); nil thì hiện câu của giờ hiện tại
     @Published var picked: Phrase?
     @Published var status: String?
@@ -24,6 +25,11 @@ final class AppModel: ObservableObject {
     func reloadProgress() {
         learned = ProgressStore.learned
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    func toggleFavorite(_ phrase: Phrase) {
+        ProgressStore.toggleFavorite(phrase.id)
+        favorites = ProgressStore.favorites
     }
 
     func toggleLearned(_ phrase: Phrase) {

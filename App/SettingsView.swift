@@ -6,6 +6,7 @@ struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage("reminderEnabled") private var reminderEnabled = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 20 * 60
+    @AppStorage("dailyGoal") private var dailyGoal = 10
     @State private var permissionDenied = false
     @State private var confirmReset = false
 
@@ -26,6 +27,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Stepper("Mục tiêu: \(dailyGoal) câu mỗi ngày", value: $dailyGoal, in: 5...100, step: 5)
+                } header: {
+                    Text("Mục tiêu")
+                } footer: {
+                    Text("Mỗi câu trả lời trong ôn tập, thẻ lật hoặc luyện nghe được tính là một câu.")
+                }
+
                 Section {
                     Toggle("Nhắc học mỗi ngày", isOn: $reminderEnabled)
                     if reminderEnabled {

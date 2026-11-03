@@ -1,12 +1,16 @@
 import SwiftUI
 
-/// Ôn tập trắc nghiệm: nhìn chữ Hán chọn nghĩa, hoặc nhìn nghĩa chọn chữ Hán.
+/// Ôn tập trắc nghiệm. Chế độ `mixed`: nhìn chữ chọn nghĩa hoặc nhìn nghĩa chọn chữ.
+/// Chế độ `listening`: nghe phát âm rồi chọn nghĩa đúng.
 /// Đúng liên tiếp `ProgressStore.streakToLearn` lần thì từ được tính là đã thuộc.
 struct QuizView: View {
-    /// Từ của chủ đề đang chọn
+    enum Mode { case mixed, listening }
+
+    /// Từ được ôn
     let pool: [Phrase]
-    /// Toàn bộ từ, để lấy đáp án nhiễu khi chủ đề ít từ
+    /// Toàn bộ từ, để lấy đáp án nhiễu khi `pool` ít từ
     let all: [Phrase]
+    var mode: Mode = .mixed
     var onChange: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -15,14 +19,16 @@ struct QuizView: View {
     @State private var chosen: Int?
     @State private var correctCount = 0
     @State private var newlyLearned = 0
+    @ScaledMetric(relativeTo: .largeTitle) private var hanziSize: CGFloat = 52
 
     static let length = 10
+
+    enum Kind { case hanziToMeaning, meaningToHanzi, listening }
 
     struct Question {
         let phrase: Phrase
         let options: [Phrase]
-        /// true: hỏi nghĩa của chữ Hán; false: hỏi chữ Hán của nghĩa
-        let asksMeaning: Bool
+        let kind: Kind
     }
 
     var body: some View {
@@ -37,7 +43,7 @@ struct QuizView: View {
                 }
             }
             .padding()
-            .navigationTitle("Ôn tập")
+            .navigationTitle(mode == .listening ? "Luyện nghe" : "Ôn tập")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -51,34 +57,21 @@ struct QuizView: View {
     private func questionView(_ q: Question) -> some View {
         VStack(spacing: 20) {
             ProgressView(value: Double(index), total: Double(questions.count))
+                .accessibilityLabel("Câu \(index + 1) trên \(questions.count)")
             Text("Câu \(index + 1)/\(questions.count)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 6) {
-                if q.asksMeaning {
-                    Text(q.phrase.hanzi)
-                        .font(.system(size: 52, weight: .bold))
-                        .minimumScaleFactor(0.4)
-                        .lineLimit(1)
-                    Text(q.phrase.pinyin).font(.title3).foregroundStyle(.red)
-                    Text("nghĩa là gì?").foregroundStyle(.secondary)
-                } else {
-                    Text(q.phrase.meaningVi)
-                        .font(.title.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                    Text("tiếng Trung là gì?").foregroundStyle(.secondary)
-                }
-            }
-            .frame(minHeight: 150)
+            prompt(q)
+                .frame(minHeight: 150)
 
             VStack(spacing: 10) {
                 ForEach(Array(q.options.enumerated()), id: \.offset) { i, option in
                     Button {
                         answer(i, for: q)
                     } label: {
-                        Text(q.asksMeaning ? option.meaningVi : option.hanzi)
-                            .font(q.asksMeaning ? .body.weight(.medium) : .title2.weight(.semibold))
+                        Text(q.kind == .meaningToHanzi ? option.hanzi : option.meaningVi)
+                            .font(q.kind == .meaningToHanzi ? .title2.weight(.semibold) : .body.weight(.medium))
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
                     .buttonStyle(.bordered)
@@ -100,6 +93,50 @@ struct QuizView: View {
             }
 
             Spacer(minLength: 0)
+        }
+        // Câu nghe tự phát âm khi hiện ra
+        .task(id: index) {
+            if q.kind == .listening && chosen == nil {
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                Speaker.shared.speak(q.phrase.hanzi)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func prompt(_ q: Question) -> some View {
+        switch q.kind {
+        case .hanziToMeaning:
+            VStack(spacing: 6) {
+                Text(q.phrase.hanzi)
+                    .font(.system(size: hanziSize, weight: .bold))
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
+                Text(q.phrase.pinyin).font(.title3).foregroundStyle(.red)
+                Text("nghĩa là gì?").foregroundStyle(.secondary)
+            }
+        case .meaningToHanzi:
+            VStack(spacing: 6) {
+                Text(q.phrase.meaningVi)
+                    .font(.title.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                Text("tiếng Trung là gì?").foregroundStyle(.secondary)
+            }
+        case .listening:
+            VStack(spacing: 12) {
+                Button {
+                    Speaker.shared.speak(q.phrase.hanzi)
+                } label: {
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.white)
+                        .frame(width: 88, height: 88)
+                        .background(Color.accentColor, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Nghe lại")
+                Text("Nghe và chọn nghĩa đúng").foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -155,15 +192,15 @@ struct QuizView: View {
         let picked = Array((due + new + later).prefix(Self.length))
 
         questions = picked.map { phrase in
-            let asksMeaning = Bool.random()
-            var seen: Set<String> = [asksMeaning ? phrase.meaningVi : phrase.hanzi]
+            let kind: Kind = mode == .listening ? .listening : (Bool.random() ? .hanziToMeaning : .meaningToHanzi)
+            func key(_ p: Phrase) -> String { kind == .meaningToHanzi ? p.hanzi : p.meaningVi }
+            var seen: Set<String> = [key(phrase)]
             let candidates = pool.shuffled() + all.shuffled()
             let distractors = candidates.filter { other in
-                let key = asksMeaning ? other.meaningVi : other.hanzi
-                return other.id != phrase.id && seen.insert(key).inserted
+                other.id != phrase.id && seen.insert(key(other)).inserted
             }
             let options = ([phrase] + distractors.prefix(3)).shuffled()
-            return Question(phrase: phrase, options: options, asksMeaning: asksMeaning)
+            return Question(phrase: phrase, options: options, kind: kind)
         }
         index = 0
         chosen = nil

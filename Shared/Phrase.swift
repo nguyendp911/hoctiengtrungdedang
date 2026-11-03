@@ -55,6 +55,24 @@ struct Phrase: Codable, Identifiable, Hashable {
     var deepLink: URL { URL(string: "hanzilock://phrase/\(id)")! }
 }
 
+extension String {
+    /// Bỏ dấu và chữ hoa để tìm kiếm: "Nỉ Hảo" → "ni hao", "đi" → "di"
+    var folded: String {
+        folding(options: [.diacriticInsensitive, .caseInsensitive, .widthInsensitive], locale: nil)
+            .replacingOccurrences(of: "đ", with: "d")
+    }
+}
+
+extension Phrase {
+    /// Khớp theo chữ Hán, pinyin, cách đọc, Hán Việt hoặc nghĩa (không phân biệt dấu)
+    func matches(_ query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces).folded
+        guard !q.isEmpty else { return true }
+        let fields = [hanzi, pinyin, readingVi, hanViet ?? "", meaningVi, example?.zh ?? ""]
+        return fields.contains { $0.folded.contains(q) }
+    }
+}
+
 enum PhraseStore {
     /// Đổi câu mới sau mỗi khoảng thời gian này (giây)
     static let rotationInterval: TimeInterval = 60 * 60

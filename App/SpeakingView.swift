@@ -7,13 +7,14 @@ struct SpeakingView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var checker = SpeechChecker()
+    @ScaledMetric(relativeTo: .largeTitle) private var hanziSize: CGFloat = 48
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 VStack(spacing: 6) {
                     Text(phrase.hanzi)
-                        .font(.system(size: 48, weight: .bold))
+                        .font(.system(size: hanziSize, weight: .bold))
                         .minimumScaleFactor(0.4)
                         .lineLimit(2)
                     Text(phrase.pinyin).font(.title3).foregroundStyle(.red)

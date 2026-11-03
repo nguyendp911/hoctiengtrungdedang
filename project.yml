@@ -25,6 +25,7 @@ targets:
         CFBundleDisplayName: Hán Tự
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [audio]
         NSMicrophoneUsageDescription: Hán Tự dùng micro để nghe bạn đọc và chấm điểm phát âm.
         NSSpeechRecognitionUsageDescription: Hán Tự nhận dạng giọng nói để so với câu mẫu khi luyện nói.
         CFBundleURLTypes:

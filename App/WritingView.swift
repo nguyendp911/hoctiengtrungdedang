@@ -78,7 +78,7 @@ struct WritingView: View {
         }
         // Vuốt xuống để đóng sẽ tranh với nét viết, nên chỉ đóng bằng nút "Xong"
         .interactiveDismissDisabled()
-        .onChange(of: selected) { board.run("make('\(selected)')") }
+        .onChange(of: selected) { board.show(selected) }
     }
 
     private func actionButton(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
@@ -92,6 +92,24 @@ struct WritingView: View {
     }
 }
 
+/// Dữ liệu nét chữ đóng gói sẵn trong app (strokes.json)
+enum StrokeStore {
+    private static let all: [String: Any] = {
+        guard let url = Bundle.main.url(forResource: "strokes", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return [:] }
+        return object
+    }()
+
+    static func json(for char: String) -> String? {
+        guard let entry = all[char],
+              let data = try? JSONSerialization.data(withJSONObject: entry)
+        else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+}
+
 @MainActor
 final class WritingBoard: ObservableObject {
     let webView: WKWebView
@@ -102,12 +120,28 @@ final class WritingBoard: ObservableObject {
         webView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
-        let html = Self.html.replacingOccurrences(of: "__CHAR__", with: character)
+        // Thư viện và dữ liệu nét nằm sẵn trong app nên dùng được khi không có mạng.
+        // Chữ nào chưa có sẵn thì thư viện tự tải từ mạng.
+        let libTag: String
+        if let url = Bundle.main.url(forResource: "hanzi-writer.min", withExtension: "js"),
+           let lib = try? String(contentsOf: url, encoding: .utf8) {
+            libTag = "<script>\(lib)</script>"
+        } else {
+            libTag = "<script src=\"https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js\"></script>"
+        }
+        let html = Self.html
+            .replacingOccurrences(of: "__LIB__", with: libTag)
+            .replacingOccurrences(of: "__CHAR__", with: character)
+            .replacingOccurrences(of: "__DATA__", with: StrokeStore.json(for: character) ?? "null")
         webView.loadHTMLString(html, baseURL: URL(string: "https://cdn.jsdelivr.net"))
     }
 
     func run(_ script: String) {
         webView.evaluateJavaScript(script)
+    }
+
+    func show(_ char: String) {
+        run("make('\(char)', \(StrokeStore.json(for: char) ?? "null"))")
     }
 
     private static let html = """
@@ -137,7 +171,7 @@ final class WritingBoard: ObservableObject {
       <div id="target"></div>
     </div>
     <div id="msg"></div>
-    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+    __LIB__
     <script>
       const size = Math.min(window.innerWidth - 32, 330);
       const wrap = document.getElementById('wrap');
@@ -148,11 +182,12 @@ final class WritingBoard: ObservableObject {
 
       function msg(text) { document.getElementById('msg').textContent = text; }
 
-      function make(char) {
+      function make(char, data) {
         if (typeof HanziWriter === 'undefined') { msg('Không tải được bộ nét chữ. Kiểm tra mạng.'); return; }
         document.getElementById('target').innerHTML = '';
         msg('Đang tải nét chữ…');
         writer = HanziWriter.create('target', char, {
+          ...(data ? { charDataLoader: (c, ok) => ok(data) } : {}),
           width: size, height: size, padding: 12,
           strokeColor: dark ? '#f2f2f7' : '#1c1c1e',
           radicalColor: '#e0484a',
@@ -190,7 +225,7 @@ final class WritingBoard: ObservableObject {
         });
       }
 
-      make('__CHAR__');
+      make('__CHAR__', __DATA__);
     </script>
     </body></html>
     """

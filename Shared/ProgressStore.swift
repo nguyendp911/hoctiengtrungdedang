@@ -16,6 +16,8 @@ enum ProgressStore {
     private static let streakKey = "streaks"
     private static let dueKey = "dueDates"
     private static let daysKey = "studyDays"
+    private static let countsKey = "dayCounts"
+    private static let favoritesKey = "favoriteIDs"
 
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: groupID) ?? .standard
@@ -45,6 +47,7 @@ enum ProgressStore {
     @discardableResult
     static func record(_ id: Int, correct: Bool) -> Bool {
         markStudiedToday()
+        incrementCount()
         guard correct else {
             setLearned(id, false)
             return false
@@ -128,8 +131,37 @@ enum ProgressStore {
         return count
     }
 
+    // MARK: Số câu trả lời mỗi ngày (cho mục tiêu và biểu đồ)
+
+    private static var dayCounts: [String: Int] {
+        defaults.dictionary(forKey: countsKey) as? [String: Int] ?? [:]
+    }
+
+    private static func incrementCount() {
+        var all = dayCounts
+        let key = dayString(Date())
+        all[key, default: 0] += 1
+        defaults.set(all, forKey: countsKey)
+    }
+
+    static func count(on date: Date) -> Int {
+        dayCounts[dayString(date)] ?? 0
+    }
+
+    // MARK: Yêu thích
+
+    static var favorites: Set<Int> {
+        Set(defaults.array(forKey: favoritesKey) as? [Int] ?? [])
+    }
+
+    static func toggleFavorite(_ id: Int) {
+        var ids = favorites
+        if ids.contains(id) { ids.remove(id) } else { ids.insert(id) }
+        defaults.set(Array(ids), forKey: favoritesKey)
+    }
+
     static func resetAll() {
-        for key in [learnedKey, streakKey, dueKey, daysKey] {
+        for key in [learnedKey, streakKey, dueKey, daysKey, countsKey] {
             defaults.removeObject(forKey: key)
         }
     }

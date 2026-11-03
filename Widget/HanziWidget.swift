@@ -103,6 +103,12 @@ struct HanziWidgetView: View {
                     Text(phrase.meaningVi)
                         .font(.footnote.weight(.semibold))
                     Spacer()
+                    Button(intent: SpeakPhraseIntent(phraseID: phrase.id)) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
                     Button(intent: MarkLearnedIntent(phraseID: phrase.id)) {
                         Image(systemName: "checkmark.circle")
                             .font(.title3)
