@@ -77,6 +77,26 @@ Muốn đổi tần suất đổi từ, sửa `rotationInterval` trong `Shared/P
 
 Tiến độ được lưu qua App Group `group.com.nguyendp.hanzilock`. Nếu công cụ ký lại làm mất App Group, app vẫn lưu tiến độ, chỉ là widget không biết từ nào đã thuộc.
 
+## Ba tab
+
+- **Học**: thẻ từ (chữ Hán, pinyin, cách đọc, Hán Việt, nghĩa, câu ví dụ), chọn chủ đề, danh sách từ.
+- **Ôn tập**: chuỗi ngày học, số từ cần ôn hôm nay, tiến độ theo chủ đề (chạm vào chủ đề để ôn riêng chủ đề đó).
+- **Cài đặt**: nhắc học mỗi ngày, cập nhật từ, xoá tiến độ.
+
+Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần (1, 2, 4, 7, 15 ngày), trả lời sai thì hỏi lại ngay.
+
+## Luyện nói
+
+Bấm **Luyện nói** trên thẻ từ, đọc to, app nhận dạng giọng tiếng Trung và chấm phần trăm giống câu mẫu (sai thanh điệu bị trừ điểm). Cần cho phép micro và nhận dạng giọng nói; nhận dạng có thể cần mạng.
+
+## Nhắc học mỗi ngày
+
+Cài đặt › bật **Nhắc học mỗi ngày** và chọn giờ. Mỗi ngày một từ khác nhau hiện trong thông báo; hôm nào đã học rồi thì không nhắc. App đặt sẵn 14 ngày và đặt lại mỗi lần mở.
+
+## Widget có nút bấm
+
+Widget màn hình chính (nhỏ và vừa) có nút ✓ để đánh dấu **Đã thuộc** ngay trên widget. Widget màn hình khoá không có nút, chạm vào để mở app.
+
 ## Luyện viết
 
 Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Dữ liệu nét chữ lấy từ thư viện Hanzi Writer, cần mạng lần đầu.
