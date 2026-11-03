@@ -69,6 +69,14 @@ Nếu file bị sai cú pháp (thiếu dấu phẩy, ngoặc…), app bỏ qua v
 
 Muốn đổi tần suất đổi từ, sửa `rotationInterval` trong `Shared/Phrase.swift`.
 
+## Ôn tập và đánh dấu đã thuộc
+
+- Bấm **Đánh dấu thuộc** trên thẻ từ, hoặc vuốt sang trái trên một dòng trong danh sách.
+- **Ôn tập**: 10 câu trắc nghiệm theo chủ đề đang chọn (nhìn chữ chọn nghĩa, hoặc nhìn nghĩa chọn chữ). Đúng 3 lần liên tiếp thì từ được tính là đã thuộc, trả lời sai thì từ phải học lại.
+- Widget ưu tiên hiện từ chưa thuộc; khi đã thuộc hết chủ đề thì hiện lại tất cả.
+
+Tiến độ được lưu qua App Group `group.com.nguyendp.hanzilock`. Nếu công cụ ký lại làm mất App Group, app vẫn lưu tiến độ, chỉ là widget không biết từ nào đã thuộc.
+
 ## Luyện viết
 
 Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Dữ liệu nét chữ lấy từ thư viện Hanzi Writer, cần mạng lần đầu.

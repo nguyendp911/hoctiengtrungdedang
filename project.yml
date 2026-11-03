@@ -28,6 +28,10 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.nguyendp.hanzilock
             CFBundleURLSchemes: [hanzilock]
+    entitlements:
+      path: App/HanziLock.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.nguyendp.hanzilock]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nguyendp.hanzilock
@@ -47,6 +51,10 @@ targets:
         CFBundleDisplayName: Hán Tự
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widget/HanziWidget.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.nguyendp.hanzilock]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nguyendp.hanzilock.widget

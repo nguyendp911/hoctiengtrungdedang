@@ -9,23 +9,46 @@ struct ContentView: View {
     @State private var picked: Phrase?
     @State private var status: String?
     @State private var isUpdating = false
+    @State private var learned = ProgressStore.learned
+    @State private var isQuizzing = false
 
     private var shown: [Phrase] { PhraseStore.phrases(in: phrases, topic: topic) }
-    private var current: Phrase { picked ?? PhraseStore.phrase(at: .now, topic: topic, in: phrases) }
+    private var current: Phrase {
+        picked ?? PhraseStore.phrase(at: .now, topic: topic, in: phrases, learned: learned)
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    PhraseCard(phrase: current)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
+                    PhraseCard(phrase: current, isLearned: learned.contains(current.id)) {
+                        // Giữ nguyên thẻ đang xem, không nhảy sang từ khác khi vừa đánh dấu
+                        picked = current
+                        toggleLearned(current)
+                    }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
                 }
 
                 Section {
                     TopicPicker(topics: PhraseStore.topics(in: phrases), selection: $topic)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                }
+
+                Section {
+                    Button {
+                        isQuizzing = true
+                    } label: {
+                        Label("Ôn tập \(topic ?? "tất cả chủ đề")", systemImage: "checklist")
+                            .font(.headline)
+                    }
+                } footer: {
+                    let done = shown.filter { learned.contains($0.id) }.count
+                    VStack(alignment: .leading, spacing: 6) {
+                        ProgressView(value: Double(done), total: Double(max(shown.count, 1)))
+                        Text("Đã thuộc \(done)/\(shown.count) từ. Widget ưu tiên hiện từ chưa thuộc.")
+                    }
                 }
 
                 Section("\(topic ?? "Tất cả") · \(shown.count) từ") {
@@ -43,9 +66,18 @@ struct ContentView: View {
                                 Text(item.meaningVi)
                                     .font(.subheadline)
                                     .multilineTextAlignment(.trailing)
+                                if learned.contains(item.id) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
                             }
                         }
                         .tint(.primary)
+                        .swipeActions {
+                            let isLearned = learned.contains(item.id)
+                            Button(isLearned ? "Chưa thuộc" : "Đã thuộc") { toggleLearned(item) }
+                                .tint(isLearned ? .orange : .green)
+                        }
                     }
                 }
 
@@ -74,6 +106,9 @@ struct ContentView: View {
             }
             .refreshable { await update() }
         }
+        .sheet(isPresented: $isQuizzing) {
+            QuizView(pool: shown, all: phrases) { reloadLearned() }
+        }
         .onChange(of: topic) { picked = nil }
         .onOpenURL { url in
             // hanzilock://phrase/<id> — được mở khi chạm vào widget
@@ -84,6 +119,16 @@ struct ContentView: View {
             Speaker.shared.speak(tapped.hanzi)
         }
         .task { await update(silent: true) }
+    }
+
+    private func toggleLearned(_ phrase: Phrase) {
+        ProgressStore.setLearned(phrase.id, !learned.contains(phrase.id))
+        reloadLearned()
+    }
+
+    private func reloadLearned() {
+        learned = ProgressStore.learned
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func update(silent: Bool = false) async {
@@ -131,6 +176,8 @@ struct TopicPicker: View {
 
 struct PhraseCard: View {
     let phrase: Phrase
+    let isLearned: Bool
+    var onToggleLearned: () -> Void
     @State private var isWriting = false
 
     var body: some View {
@@ -174,12 +221,21 @@ struct PhraseCard: View {
             }
             .padding(.top, 4)
 
-            Button {
-                isWriting = true
-            } label: {
-                Label("Luyện viết", systemImage: "pencil.and.outline")
+            HStack(spacing: 12) {
+                Button {
+                    isWriting = true
+                } label: {
+                    Label("Luyện viết", systemImage: "pencil.and.outline")
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: onToggleLearned) {
+                    Label(isLearned ? "Đã thuộc" : "Đánh dấu thuộc",
+                          systemImage: isLearned ? "checkmark.circle.fill" : "circle")
+                }
+                .buttonStyle(.bordered)
+                .tint(isLearned ? .green : nil)
             }
-            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity)
         .padding(24)

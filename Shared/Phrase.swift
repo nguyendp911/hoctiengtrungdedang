@@ -104,8 +104,11 @@ enum PhraseStore {
 
     /// Câu hiển thị tại một thời điểm. Tính theo thời gian nên app và widget
     /// luôn ra cùng một câu mà không cần chia sẻ dữ liệu (App Group).
-    static func phrase(at date: Date, topic: String? = nil, in list: [Phrase]) -> Phrase {
-        let pool = phrases(in: list, topic: topic)
+    /// Từ trong `learned` bị bỏ qua, trừ khi cả chủ đề đã thuộc hết.
+    static func phrase(at date: Date, topic: String? = nil, in list: [Phrase], learned: Set<Int> = []) -> Phrase {
+        let all = phrases(in: list, topic: topic)
+        let unlearned = all.filter { !learned.contains($0.id) }
+        let pool = unlearned.isEmpty ? all : unlearned
         let slot = Int(floor(date.timeIntervalSince1970 / rotationInterval))
         let count = pool.count
         return pool[((slot % count) + count) % count]

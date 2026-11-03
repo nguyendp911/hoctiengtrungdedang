@@ -14,7 +14,8 @@ struct PhraseProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: SelectTopicIntent, in context: Context) async -> PhraseEntry {
         let list = PhraseStore.load()
         let topic = configuration.topic?.filter
-        return PhraseEntry(date: .now, phrase: PhraseStore.phrase(at: .now, topic: topic, in: list))
+        let learned = ProgressStore.learned
+        return PhraseEntry(date: .now, phrase: PhraseStore.phrase(at: .now, topic: topic, in: list, learned: learned))
     }
 
     func timeline(for configuration: SelectTopicIntent, in context: Context) async -> Timeline<PhraseEntry> {
@@ -22,12 +23,13 @@ struct PhraseProvider: AppIntentTimelineProvider {
         await PhraseStore.refreshIfStale()
         let list = PhraseStore.load()
         let topic = configuration.topic?.filter
+        let learned = ProgressStore.learned
 
         // Lên lịch sẵn 24 câu cho 24 khung giờ tới, hết thì iOS gọi lại
         let start = PhraseStore.slotStart(for: .now)
         let entries = (0..<24).map { i in
             let date = start.addingTimeInterval(Double(i) * PhraseStore.rotationInterval)
-            return PhraseEntry(date: date, phrase: PhraseStore.phrase(at: date, topic: topic, in: list))
+            return PhraseEntry(date: date, phrase: PhraseStore.phrase(at: date, topic: topic, in: list, learned: learned))
         }
         return Timeline(entries: entries, policy: .atEnd)
     }

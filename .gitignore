@@ -6,3 +6,5 @@ Payload/
 xcuserdata/
 App/Info.plist
 Widget/Info.plist
+App/*.entitlements
+Widget/*.entitlements
