@@ -196,7 +196,7 @@ struct PhraseCard: View {
                 .font(.title2)
                 .foregroundStyle(.red)
 
-            Label(phrase.readingVi, systemImage: "text.bubble")
+            Text("Đọc: \(phrase.readingVi)")
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
@@ -204,37 +204,35 @@ struct PhraseCard: View {
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
 
-            HStack(spacing: 12) {
-                Button {
-                    Speaker.shared.speak(phrase.hanzi)
-                } label: {
-                    Label("Phát âm", systemImage: "speaker.wave.2.fill")
+            // Nút chính: phát âm, chiếm cả chiều ngang
+            Button {
+                Speaker.shared.speak(phrase.hanzi)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "speaker.wave.2.fill")
+                    Text("Phát âm")
                 }
-                .buttonStyle(.borderedProminent)
-
-                Button {
-                    Speaker.shared.speak(phrase.hanzi, slow: true)
-                } label: {
-                    Label("Đọc chậm", systemImage: "tortoise.fill")
-                }
-                .buttonStyle(.bordered)
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(.white)
+                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14))
             }
-            .padding(.top, 4)
+            .buttonStyle(.plain)
+            .padding(.top, 6)
 
-            HStack(spacing: 12) {
-                Button {
+            // Ba nút phụ cùng kích thước: biểu tượng trên, chữ dưới
+            HStack(spacing: 10) {
+                CardTile(title: "Đọc chậm", icon: "tortoise.fill") {
+                    Speaker.shared.speak(phrase.hanzi, slow: true)
+                }
+                CardTile(title: "Luyện viết", icon: "pencil.and.outline") {
                     isWriting = true
-                } label: {
-                    Label("Luyện viết", systemImage: "pencil.and.outline")
                 }
-                .buttonStyle(.bordered)
-
-                Button(action: onToggleLearned) {
-                    Label(isLearned ? "Đã thuộc" : "Đánh dấu thuộc",
-                          systemImage: isLearned ? "checkmark.circle.fill" : "circle")
-                }
-                .buttonStyle(.bordered)
-                .tint(isLearned ? .green : nil)
+                CardTile(title: "Đã thuộc",
+                         icon: isLearned ? "checkmark.circle.fill" : "circle",
+                         color: isLearned ? .green : .accentColor,
+                         action: onToggleLearned)
             }
         }
         .frame(maxWidth: .infinity)
@@ -243,6 +241,33 @@ struct PhraseCard: View {
         .sheet(isPresented: $isWriting) {
             WritingView(phrase: phrase)
         }
+    }
+}
+
+/// Nút vuông nhỏ trên thẻ từ, các nút luôn rộng bằng nhau
+struct CardTile: View {
+    let title: String
+    let icon: String
+    var color: Color = .accentColor
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .frame(height: 24)
+                Text(title)
+                    .font(.footnote.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(color)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
     }
 }
 
