@@ -50,15 +50,28 @@ Trong Xcode: chọn target **HanziLock** và **HanziWidget** › Signing & Capab
 
 Giữ màn hình khoá › **Tuỳ chỉnh** › **Màn hình khoá** › chạm ô widget dưới đồng hồ › chọn **Hán Tự** (kiểu chữ nhật hiển thị đầy đủ nhất).
 
-## Thêm từ mới
+## Thêm từ mới, chủ đề mới (không cần cài lại app)
 
-Thêm một dòng vào `Shared/phrases.json` (id không trùng):
+Sửa file `Shared/phrases.json` ngay trên GitHub (bấm vào file › biểu tượng bút chì › Commit changes). App và widget tự tải bản mới:
+
+- App: mở app, hoặc kéo danh sách xuống / bấm nút ↻.
+- Widget: tự tải lại khoảng 6 giờ một lần.
+
+Mỗi từ là một dòng, `id` không được trùng. Ghi chủ đề mới vào `topic` là có chủ đề mới:
 
 ```json
-{ "id": 31, "hanzi": "苹果", "pinyin": "píngguǒ", "readingVi": "pính của", "meaningVi": "Quả táo" }
+{ "id": 66, "topic": "Trái cây", "hanzi": "苹果", "pinyin": "píngguǒ", "readingVi": "pính của", "meaningVi": "Quả táo" },
 ```
 
-Muốn đổi tần suất, sửa `rotationInterval` trong `Shared/Phrase.swift`.
+Nếu file bị sai cú pháp (thiếu dấu phẩy, ngoặc…), app bỏ qua và giữ danh sách cũ.
+
+Đổi chủ đề trên màn hình khoá: giữ màn hình khoá › Tuỳ chỉnh › chạm vào widget Hán Tự › chọn Chủ đề.
+
+Muốn đổi tần suất đổi từ, sửa `rotationInterval` trong `Shared/Phrase.swift`.
+
+## Luyện viết
+
+Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Dữ liệu nét chữ lấy từ thư viện Hanzi Writer, cần mạng lần đầu.
 
 ## Giới hạn của iOS
 

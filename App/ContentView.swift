@@ -131,6 +131,7 @@ struct TopicPicker: View {
 
 struct PhraseCard: View {
     let phrase: Phrase
+    @State private var isWriting = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -172,10 +173,20 @@ struct PhraseCard: View {
                 .buttonStyle(.bordered)
             }
             .padding(.top, 4)
+
+            Button {
+                isWriting = true
+            } label: {
+                Label("Luyện viết", systemImage: "pencil.and.outline")
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity)
         .padding(24)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .sheet(isPresented: $isWriting) {
+            WritingView(phrase: phrase)
+        }
     }
 }
 
