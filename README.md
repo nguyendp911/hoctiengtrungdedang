@@ -19,9 +19,18 @@ App/                     App chính: thẻ từ, nút phát âm, danh sách
 Widget/HanziWidget.swift Widget màn hình khoá / màn hình chính
 ```
 
-## Build (cần máy Mac có Xcode 15+)
+## Build trên GitHub (không cần Mac)
 
-iOS app không build được trên Windows. Trên Mac:
+Mỗi lần push lên `main`, GitHub Actions tự build và tạo file `HanziLock-unsigned.ipa`:
+
+1. Vào tab **Actions** của repo › chọn lần chạy mới nhất › mục **Artifacts** › tải `HanziLock-unsigned-ipa` (file .zip, giải nén ra .ipa).
+2. Cài [Sideloadly](https://sideloadly.io) trên Windows (kèm iTunes bản tải từ web Apple), cắm iPhone qua cáp.
+3. Kéo file .ipa vào Sideloadly, nhập Apple ID, bấm Start.
+4. Trên iPhone: Cài đặt › Quyền riêng tư & Bảo mật › bật **Chế độ nhà phát triển**; Cài đặt › Cài đặt chung › VPN & Quản lý thiết bị › tin cậy Apple ID của bạn.
+
+Apple ID miễn phí: app hết hạn sau 7 ngày, cài lại bằng Sideloadly là được.
+
+## Build trên Mac (Xcode 15+)
 
 ```bash
 brew install xcodegen
