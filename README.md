@@ -99,7 +99,26 @@ Widget màn hình chính (nhỏ và vừa) có nút ✓ để đánh dấu **Đ�
 
 ## Luyện viết
 
-Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Dữ liệu nét chữ lấy từ thư viện Hanzi Writer, cần mạng lần đầu.
+Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Thư viện Hanzi Writer (MIT) và dữ liệu nét của 392 chữ đã đóng gói sẵn trong app (`App/Resources`), nên luyện viết chạy được khi không có mạng. Chữ mới thêm sau này mà chưa có sẵn thì app tự tải từ mạng. Dữ liệu nét lấy từ gói `hanzi-writer-data`, xuất xứ từ dự án Make Me a Hanzi (font Arphic, giấy phép Arphic Public License), xem điều khoản trước khi phát hành công khai.
+
+## Tìm kiếm và yêu thích
+
+Ô tìm kiếm ở tab Học khớp theo chữ Hán, pinyin, cách đọc, Hán Việt hoặc nghĩa, không phân biệt dấu ("ni hao", "nỉ hảo", "chao" đều tìm được). Bấm ngôi sao trên thẻ từ, hoặc vuốt phải trên một dòng, để thêm vào **Yêu thích**; chọn chip Yêu thích để chỉ xem các từ đó.
+
+## Luyện tập khác (tab Ôn tập)
+
+- **Mục tiêu hằng ngày** và biểu đồ 7 ngày: đổi số câu mục tiêu trong Cài đặt.
+- **Thẻ lật**: vuốt phải khi đã nhớ, vuốt trái để học lại, chạm để lật.
+- **Luyện nghe**: nghe phát âm rồi chọn nghĩa đúng.
+- **Luyện thanh điệu**: xem đường cao độ của 4 thanh, rồi nghe một chữ và chọn thanh.
+
+## Siri và Phím tắt
+
+Ứng dụng Phím tắt có sẵn hành động **Từ hôm nay**: đọc to từ đang hiện trên widget. Nút loa trên widget màn hình chính cũng đọc to từ mà không cần mở app (cần quyền phát âm khi chạy nền).
+
+## Dữ liệu từ vựng
+
+`Shared/phrases.json` có 340 từ: 65 từ theo chủ đề và 275 từ HSK 1, 2, 3 (chọn lọc, chưa đủ toàn bộ danh sách chính thức). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, chỉ kiểm tra được số âm tiết, nên nên rà lại bằng từ điển.
 
 ## Giới hạn của iOS
 
