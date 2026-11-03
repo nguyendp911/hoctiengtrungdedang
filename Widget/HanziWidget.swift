@@ -60,23 +60,21 @@ struct HanziWidgetView: View {
             }
 
         case .accessoryRectangular:
-            // Ô chữ nhật dưới đồng hồ: đủ chỗ cho cả 4 thông tin
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(phrase.hanzi)
-                        .font(.headline)
-                        .widgetAccentable()
-                    Text(phrase.pinyin)
-                        .font(.caption)
-                }
-                Text("Đọc: \(phrase.readingVi)")
-                    .font(.caption)
-                Text(phrase.meaningVi)
-                    .font(.caption.weight(.semibold))
+            // Ô chữ nhật dưới đồng hồ: chữ Hán lớn ở giữa, pinyin · cách đọc bên dưới.
+            // Nghĩa nằm ở dòng nhỏ phía trên đồng hồ (accessoryInline).
+            VStack(spacing: 1) {
+                Text(phrase.hanzi)
+                    .font(.system(size: 30, weight: .semibold))
+                    .minimumScaleFactor(0.5)
+                    .widgetAccentable()
+                Text("\(phrase.pinyin) · \(phrase.readingVi)")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .minimumScaleFactor(0.7)
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         default:
             // Widget màn hình chính
