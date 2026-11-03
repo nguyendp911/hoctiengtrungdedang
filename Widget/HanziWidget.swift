@@ -6,23 +6,30 @@ struct PhraseEntry: TimelineEntry {
     let phrase: Phrase
 }
 
-struct PhraseProvider: TimelineProvider {
+struct PhraseProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> PhraseEntry {
         PhraseEntry(date: .now, phrase: .sample)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (PhraseEntry) -> Void) {
-        completion(PhraseEntry(date: .now, phrase: PhraseStore.phrase(at: .now)))
+    func snapshot(for configuration: SelectTopicIntent, in context: Context) async -> PhraseEntry {
+        let list = PhraseStore.load()
+        let topic = configuration.topic?.filter
+        return PhraseEntry(date: .now, phrase: PhraseStore.phrase(at: .now, topic: topic, in: list))
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<PhraseEntry>) -> Void) {
+    func timeline(for configuration: SelectTopicIntent, in context: Context) async -> Timeline<PhraseEntry> {
+        // Lấy từ mới trên GitHub (nếu bản đã lưu quá cũ), lỗi mạng thì dùng bản cũ
+        await PhraseStore.refreshIfStale()
+        let list = PhraseStore.load()
+        let topic = configuration.topic?.filter
+
         // Lên lịch sẵn 24 câu cho 24 khung giờ tới, hết thì iOS gọi lại
         let start = PhraseStore.slotStart(for: .now)
         let entries = (0..<24).map { i in
             let date = start.addingTimeInterval(Double(i) * PhraseStore.rotationInterval)
-            return PhraseEntry(date: date, phrase: PhraseStore.phrase(at: date))
+            return PhraseEntry(date: date, phrase: PhraseStore.phrase(at: date, topic: topic, in: list))
         }
-        completion(Timeline(entries: entries, policy: .atEnd))
+        return Timeline(entries: entries, policy: .atEnd)
     }
 }
 
@@ -106,11 +113,11 @@ struct HanziWidgetView: View {
 
 struct HanziWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "HanziWidget", provider: PhraseProvider()) { entry in
+        AppIntentConfiguration(kind: "HanziWidget", intent: SelectTopicIntent.self, provider: PhraseProvider()) { entry in
             HanziWidgetView(entry: entry)
         }
         .configurationDisplayName("Hán Tự mỗi giờ")
-        .description("Một từ/câu tiếng Trung với pinyin, cách đọc và nghĩa tiếng Việt. Chạm để nghe phát âm.")
+        .description("Một từ/câu tiếng Trung theo chủ đề. Chạm để nghe phát âm, sửa widget để đổi chủ đề.")
         .supportedFamilies([
             .accessoryRectangular,
             .accessoryInline,
