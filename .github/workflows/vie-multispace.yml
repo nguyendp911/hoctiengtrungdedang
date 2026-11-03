@@ -26,7 +26,7 @@ jobs:
 
       - name: Build unsigned iOS app
         run: |
-          set -eo pipefail
+          set +e
           xcodebuild \
             -project VieMultiSpace/VieMultiSpace.xcodeproj \
             -scheme VieMultiSpace \
@@ -37,7 +37,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            build > build.log 2>&1
+          STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "========== COMPILATION ERRORS =========="
+            grep -E "error:" build.log || true
+            echo "========== LAST 50 LINES =========="
+            tail -n 50 build.log
+            exit $STATUS
+          fi
 
       - name: Package IPA for Sideloadly
         run: |
