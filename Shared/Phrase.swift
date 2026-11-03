@@ -19,9 +19,12 @@ struct Phrase: Codable, Identifiable, Hashable {
     /// Số thứ tự và tên bài học trong cấp HSK (chỉ các từ HSK mới có)
     let unitNo: Int?
     let unit: String?
+    /// Cấp HSK ghi thẳng cho từ nằm ở chủ đề khác (ví dụ "Giao tiếp") nhưng thuộc một cấp HSK
+    let hsk: Int?
 
-    /// Cấp HSK 1...6 suy ra từ chủ đề "HSK n", cấp 7 là "HSK 7-9"; nil nếu không phải từ HSK
+    /// Cấp HSK 1...6 (ưu tiên trường `hsk`, không có thì suy ra từ chủ đề "HSK n"); cấp 7 là "HSK 7-9"
     var hskLevel: Int? {
+        if let hsk { return hsk }
         guard topic.hasPrefix("HSK ") else { return nil }
         let rest = topic.dropFirst(4)
         return rest.hasPrefix("7") ? 7 : Int(rest)
@@ -34,7 +37,8 @@ struct Phrase: Codable, Identifiable, Hashable {
     }
 
     init(id: Int, hanzi: String, pinyin: String, readingVi: String, meaningVi: String, topic: String,
-         hanViet: String? = nil, example: Example? = nil, unitNo: Int? = nil, unit: String? = nil) {
+         hanViet: String? = nil, example: Example? = nil, unitNo: Int? = nil, unit: String? = nil,
+         hsk: Int? = nil) {
         self.id = id
         self.hanzi = hanzi
         self.pinyin = pinyin
@@ -45,6 +49,7 @@ struct Phrase: Codable, Identifiable, Hashable {
         self.example = example
         self.unitNo = unitNo
         self.unit = unit
+        self.hsk = hsk
     }
 
     init(from decoder: Decoder) throws {
@@ -60,6 +65,7 @@ struct Phrase: Codable, Identifiable, Hashable {
         example = try? c.decodeIfPresent(Example.self, forKey: .example)
         unitNo = try? c.decodeIfPresent(Int.self, forKey: .unitNo)
         unit = try? c.decodeIfPresent(String.self, forKey: .unit)
+        hsk = try? c.decodeIfPresent(Int.self, forKey: .hsk)
     }
 
     static let sample = Phrase(id: 0, hanzi: "你好", pinyin: "nǐ hǎo", readingVi: "nỉ hảo", meaningVi: "Xin chào",
