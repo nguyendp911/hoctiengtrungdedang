@@ -179,9 +179,10 @@ struct PathView: View {
     // MARK: Tổng quan cấp
 
     private var overviewCard: some View {
+        let snap = ProgressStore.snapshot()
         let total = words.count
         let done = words.filter { model.learned.contains($0.id) }.count
-        let untouched = words.filter { ProgressStore.state(of: $0.id) == .new && !model.learned.contains($0.id) }.count
+        let untouched = words.filter { snap.state(of: $0.id) == .new && !model.learned.contains($0.id) }.count
         let official = Curriculum.officialNewWords[level] ?? total
         let perDay = max(newPerDay, 1)
         let days = (untouched + perDay - 1) / perDay
@@ -211,11 +212,12 @@ struct PathView: View {
     // MARK: Kế hoạch hôm nay
 
     private var planCard: some View {
+        let snap = ProgressStore.snapshot()
         let newDone = ProgressStore.newWords(on: Date())
         let remainingNew = max(0, newPerDay - newDone)
-        let candidates = words.filter { ProgressStore.state(of: $0.id) == .new && !model.learned.contains($0.id) }
+        let candidates = words.filter { snap.state(of: $0.id) == .new && !model.learned.contains($0.id) }
         let todayNew = Array(candidates.prefix(remainingNew))
-        let due = words.filter { ProgressStore.state(of: $0.id) == .due }
+        let due = words.filter { snap.state(of: $0.id) == .due }
         let finished = todayNew.isEmpty && due.isEmpty
         return VStack(alignment: .leading, spacing: 12) {
             planRow(done: remainingNew == 0 || candidates.isEmpty,

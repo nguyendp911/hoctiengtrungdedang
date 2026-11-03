@@ -174,8 +174,9 @@ struct FlashcardView: View {
 
     private func start() {
         let learned = ProgressStore.learned
-        let due = pool.filter { ProgressStore.state(of: $0.id) == .due }.shuffled()
-        let new = pool.filter { ProgressStore.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
+        let snap = ProgressStore.snapshot()
+        let due = pool.filter { snap.state(of: $0.id) == .due }.shuffled()
+        let new = pool.filter { snap.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
         let later = pool.filter { !due.contains($0) && !new.contains($0) }.shuffled()
         deck = Array((due + new + later).prefix(Self.length))
         index = 0

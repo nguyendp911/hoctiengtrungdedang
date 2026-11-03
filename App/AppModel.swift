@@ -15,11 +15,13 @@ final class AppModel: ObservableObject {
     var topics: [String] { PhraseStore.topics(in: phrases) }
 
     var dueCount: Int {
-        phrases.filter { ProgressStore.state(of: $0.id) == .due }.count
+        let snap = ProgressStore.snapshot()
+        return phrases.filter { snap.state(of: $0.id) == .due }.count
     }
 
     var newCount: Int {
-        phrases.filter { ProgressStore.state(of: $0.id) == .new && !learned.contains($0.id) }.count
+        let snap = ProgressStore.snapshot()
+        return phrases.filter { snap.state(of: $0.id) == .new && !learned.contains($0.id) }.count
     }
 
     func reloadProgress() {

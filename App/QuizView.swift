@@ -194,9 +194,10 @@ struct QuizView: View {
 
     private func start() {
         let learned = ProgressStore.learned
+        let snap = ProgressStore.snapshot()
         // Từ đến hạn ôn trước, rồi từ mới, cuối cùng là từ chưa đến hạn
-        let due = pool.filter { ProgressStore.state(of: $0.id) == .due }.shuffled()
-        let new = pool.filter { ProgressStore.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
+        let due = pool.filter { snap.state(of: $0.id) == .due }.shuffled()
+        let new = pool.filter { snap.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
         let later = pool.filter { !due.contains($0) && !new.contains($0) }.shuffled()
         let picked = Array((due + new + later).prefix(length))
 

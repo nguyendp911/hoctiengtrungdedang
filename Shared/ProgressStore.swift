@@ -68,6 +68,26 @@ enum ProgressStore {
 
     // MARK: Lịch ôn
 
+    /// Ảnh chụp lịch ôn tại một thời điểm. Đọc một lần rồi tra nhiều lần, nhanh hơn
+    /// nhiều so với gọi `state(of:)` cho từng từ khi danh sách có hàng nghìn từ.
+    struct Snapshot {
+        private let dueDates: [String: Double]
+        private let now = Date().timeIntervalSince1970
+
+        fileprivate init(dueDates: [String: Double]) {
+            self.dueDates = dueDates
+        }
+
+        func state(of id: Int) -> State {
+            guard let due = dueDates[String(id)] else { return .new }
+            return due <= now ? .due : .later
+        }
+    }
+
+    static func snapshot() -> Snapshot {
+        Snapshot(dueDates: dueDates)
+    }
+
     static func state(of id: Int, now: Date = Date()) -> State {
         guard let due = dueDates[String(id)] else { return .new }
         return due <= now.timeIntervalSince1970 ? .due : .later
