@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage("reminderEnabled") private var reminderEnabled = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 20 * 60
     @AppStorage("dailyGoal") private var dailyGoal = 10
+    @AppStorage("newPerDay") private var newPerDay = 5
     @State private var permissionDenied = false
     @State private var confirmReset = false
 
@@ -28,11 +29,12 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    Stepper("Từ mới mỗi ngày: \(newPerDay)", value: $newPerDay, in: 1...30)
                     Stepper("Mục tiêu: \(dailyGoal) câu mỗi ngày", value: $dailyGoal, in: 5...100, step: 5)
                 } header: {
-                    Text("Mục tiêu")
+                    Text("Kế hoạch học")
                 } footer: {
-                    Text("Mỗi câu trả lời trong ôn tập, thẻ lật hoặc luyện nghe được tính là một câu.")
+                    Text("Từ mới mỗi ngày dùng cho tab Lộ trình và ước tính ngày hoàn thành mỗi cấp HSK. Mỗi câu trả lời trong ôn tập, thẻ lật hoặc luyện nghe được tính là một câu.")
                 }
 
                 Section {

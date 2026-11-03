@@ -17,6 +17,7 @@ enum ProgressStore {
     private static let dueKey = "dueDates"
     private static let daysKey = "studyDays"
     private static let countsKey = "dayCounts"
+    private static let newCountsKey = "dayNewCounts"
     private static let favoritesKey = "favoriteIDs"
 
     private static var defaults: UserDefaults {
@@ -48,6 +49,7 @@ enum ProgressStore {
     static func record(_ id: Int, correct: Bool) -> Bool {
         markStudiedToday()
         incrementCount()
+        if state(of: id) == .new { incrementNewWords() }
         guard correct else {
             setLearned(id, false)
             return false
@@ -148,6 +150,23 @@ enum ProgressStore {
         dayCounts[dayString(date)] ?? 0
     }
 
+    // MARK: Từ mới mỗi ngày (cho kế hoạch học)
+
+    private static var newCounts: [String: Int] {
+        defaults.dictionary(forKey: newCountsKey) as? [String: Int] ?? [:]
+    }
+
+    /// Gọi trước khi ghi lịch ôn: từ chưa từng học thì tính là một từ mới của hôm nay
+    private static func incrementNewWords() {
+        var all = newCounts
+        all[dayString(Date()), default: 0] += 1
+        defaults.set(all, forKey: newCountsKey)
+    }
+
+    static func newWords(on date: Date) -> Int {
+        newCounts[dayString(date)] ?? 0
+    }
+
     // MARK: Yêu thích
 
     static var favorites: Set<Int> {
@@ -161,7 +180,7 @@ enum ProgressStore {
     }
 
     static func resetAll() {
-        for key in [learnedKey, streakKey, dueKey, daysKey, countsKey] {
+        for key in [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey] {
             defaults.removeObject(forKey: key)
         }
     }

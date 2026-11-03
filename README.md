@@ -77,7 +77,18 @@ Muốn đổi tần suất đổi từ, sửa `rotationInterval` trong `Shared/P
 
 Tiến độ được lưu qua App Group `group.com.nguyendp.hanzilock`. Nếu công cụ ký lại làm mất App Group, app vẫn lưu tiến độ, chỉ là widget không biết từ nào đã thuộc.
 
-## Ba tab
+## Lộ trình HSK (tab Lộ trình)
+
+Chọn cấp HSK 1, 2 hoặc 3. Mỗi cấp chia thành các bài theo chủ đề (ví dụ HSK 1: Chào hỏi và xưng hô, Số đếm và ngày giờ, Hành động hằng ngày...).
+
+- **Kế hoạch hôm nay:** học số từ mới mỗi ngày bạn đặt (mặc định 5, đổi trong Cài đặt) cộng với các từ đến hạn ôn. Một nút "Bắt đầu hôm nay" mở thẻ lật đúng các từ đó.
+- **Ước tính ngày hoàn thành:** từ số từ còn lại chia cho số từ mới mỗi ngày.
+- **Học bài / Kiểm tra bài:** mỗi bài có thẻ lật và bài kiểm tra riêng.
+- **Thi thử HSK:** 20 câu từ vựng trộn của cấp đó, đạt từ 60%.
+
+Số từ trong app hiện là HSK 1: 135, HSK 2: 109, HSK 3: 51, so với chuẩn HSK 2.0 là 150, 150 và 300 từ mới mỗi cấp, nên chưa đủ danh sách chính thức. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này.
+
+## Ba tab (Học, Ôn tập, Cài đặt)
 
 - **Học**: thẻ từ (chữ Hán, pinyin, cách đọc, Hán Việt, nghĩa, câu ví dụ), chọn chủ đề, danh sách từ.
 - **Ôn tập**: chuỗi ngày học, số từ cần ôn hôm nay, tiến độ theo chủ đề (chạm vào chủ đề để ôn riêng chủ đề đó).

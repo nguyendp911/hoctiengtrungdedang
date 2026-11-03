@@ -12,13 +12,16 @@ struct RootView: View {
             LearnView()
                 .tabItem { Label("Học", systemImage: "book.fill") }
                 .tag(0)
+            PathView()
+                .tabItem { Label("Lộ trình", systemImage: "map.fill") }
+                .tag(1)
             ReviewView()
                 .tabItem { Label("Ôn tập", systemImage: "checklist") }
                 .badge(model.dueCount)
-                .tag(1)
+                .tag(2)
             SettingsView()
                 .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
-                .tag(2)
+                .tag(3)
         }
         .environmentObject(model)
         .onOpenURL { url in

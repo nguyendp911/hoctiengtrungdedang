@@ -16,6 +16,14 @@ struct Phrase: Codable, Identifiable, Hashable {
     let hanViet: String?
     /// Câu ví dụ (không bắt buộc)
     let example: Example?
+    /// Số thứ tự và tên bài học trong cấp HSK (chỉ các từ HSK mới có)
+    let unitNo: Int?
+    let unit: String?
+
+    /// Cấp HSK 1, 2, 3... suy ra từ chủ đề "HSK n"; nil nếu không phải từ HSK
+    var hskLevel: Int? {
+        topic.hasPrefix("HSK ") ? Int(topic.dropFirst(4)) : nil
+    }
 
     struct Example: Codable, Hashable {
         let zh: String
@@ -24,7 +32,7 @@ struct Phrase: Codable, Identifiable, Hashable {
     }
 
     init(id: Int, hanzi: String, pinyin: String, readingVi: String, meaningVi: String, topic: String,
-         hanViet: String? = nil, example: Example? = nil) {
+         hanViet: String? = nil, example: Example? = nil, unitNo: Int? = nil, unit: String? = nil) {
         self.id = id
         self.hanzi = hanzi
         self.pinyin = pinyin
@@ -33,6 +41,8 @@ struct Phrase: Codable, Identifiable, Hashable {
         self.topic = topic
         self.hanViet = hanViet
         self.example = example
+        self.unitNo = unitNo
+        self.unit = unit
     }
 
     init(from decoder: Decoder) throws {
@@ -46,6 +56,8 @@ struct Phrase: Codable, Identifiable, Hashable {
         topic = try c.decodeIfPresent(String.self, forKey: .topic) ?? "Khác"
         hanViet = try c.decodeIfPresent(String.self, forKey: .hanViet)
         example = try? c.decodeIfPresent(Example.self, forKey: .example)
+        unitNo = try? c.decodeIfPresent(Int.self, forKey: .unitNo)
+        unit = try? c.decodeIfPresent(String.self, forKey: .unit)
     }
 
     static let sample = Phrase(id: 0, hanzi: "你好", pinyin: "nǐ hǎo", readingVi: "nỉ hảo", meaningVi: "Xin chào",

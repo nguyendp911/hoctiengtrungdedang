@@ -11,6 +11,11 @@ struct QuizView: View {
     /// Toàn bộ từ, để lấy đáp án nhiễu khi `pool` ít từ
     let all: [Phrase]
     var mode: Mode = .mixed
+    /// Số câu mỗi lượt
+    var length: Int = 10
+    /// Nếu có (ví dụ 0.6) thì kết quả báo Đạt / Chưa đạt, dùng cho thi thử
+    var passMark: Double? = nil
+    var title: String? = nil
     var onChange: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -20,8 +25,6 @@ struct QuizView: View {
     @State private var correctCount = 0
     @State private var newlyLearned = 0
     @ScaledMetric(relativeTo: .largeTitle) private var hanziSize: CGFloat = 52
-
-    static let length = 10
 
     enum Kind { case hanziToMeaning, meaningToHanzi, listening }
 
@@ -43,7 +46,7 @@ struct QuizView: View {
                 }
             }
             .padding()
-            .navigationTitle(mode == .listening ? "Luyện nghe" : "Ôn tập")
+            .navigationTitle(title ?? (mode == .listening ? "Luyện nghe" : "Ôn tập"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -147,6 +150,12 @@ struct QuizView: View {
                 .foregroundStyle(.tint)
             Text("Đúng \(correctCount)/\(questions.count)")
                 .font(.largeTitle.bold())
+            if let passMark, !questions.isEmpty {
+                let passed = Double(correctCount) / Double(questions.count) >= passMark
+                Text(passed ? "Đạt" : "Chưa đạt (cần từ \(Int(passMark * 100))%)")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(passed ? Color.green : Color.orange)
+            }
             if newlyLearned > 0 {
                 Text("Đã thuộc thêm \(newlyLearned) từ")
                     .foregroundStyle(.secondary)
@@ -189,7 +198,7 @@ struct QuizView: View {
         let due = pool.filter { ProgressStore.state(of: $0.id) == .due }.shuffled()
         let new = pool.filter { ProgressStore.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
         let later = pool.filter { !due.contains($0) && !new.contains($0) }.shuffled()
-        let picked = Array((due + new + later).prefix(Self.length))
+        let picked = Array((due + new + later).prefix(length))
 
         questions = picked.map { phrase in
             let kind: Kind = mode == .listening ? .listening : (Bool.random() ? .hanziToMeaning : .meaningToHanzi)
