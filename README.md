@@ -89,7 +89,7 @@ Lộ trình theo chuẩn HSK 3.0: **HSK 0** (nhập môn phiên âm, không ph�
 - **Học bài / Kiểm tra bài:** mỗi bài có thẻ lật và bài kiểm tra riêng.
 - **Thi thử HSK:** 20 câu từ vựng trộn của cấp đó, đạt từ 60%.
 
-Số từ trong app hiện là HSK 1: 469, HSK 2: 757, HSK 3: 954, HSK 4: 968, HSK 5: 1055, HSK 6: 1140, so với 500, 772, 973, 1000, 1071 và 1140 của chuẩn 3.0, nên HSK 6 đã đủ số lượng, các cấp 1–5 còn thiếu vài chục từ, HSK 7–9 chưa có. Các từ HSK hiện có được xếp cấp xấp xỉ theo kinh nghiệm học, chưa đối chiếu từng từ với danh sách chính thức của HSK 3.0. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
+Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, HSK 5: 1071, HSK 6: 1140, đúng bằng số lượng của chuẩn 3.0; HSK 7–9 chưa có. Các từ HSK hiện có được xếp cấp xấp xỉ theo kinh nghiệm học, chưa đối chiếu từng từ với danh sách chính thức của HSK 3.0. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
 
 ## Ba tab (Học, Ôn tập, Cài đặt)
 
