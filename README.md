@@ -100,7 +100,7 @@ Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, 
 - **Ôn tập**: chuỗi ngày học, số từ cần ôn hôm nay, tiến độ theo chủ đề (chạm vào chủ đề để ôn riêng chủ đề đó).
 - **Cài đặt**: nhắc học mỗi ngày, cập nhật từ, xoá tiến độ.
 
-Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần (1, 2, 4, 7, 15, 30, 60 ngày), trả lời sai thì hỏi lại ngay và lùi 2 bậc (không về 0).
+Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần kiểu SM-2: thẻ lật có bốn nút Học lại / Khó / Tốt / Dễ, khoảng ôn lần lượt khoảng 1, 3 rồi nhân với hệ số dễ của từng từ (tối đa 180 ngày); Khó nhân nhỏ hơn, Dễ nhân lớn hơn, Học lại thì hỏi lại ngay và lùi 2 bậc (không về 0). Câu trắc nghiệm đúng tính là Tốt, sai là Học lại.
 
 ## Luyện nói
 
@@ -157,3 +157,13 @@ Unit test nằm trong `Tests/` (từ vựng, tìm kiếm, lịch ôn, sao lưu).
 
 - Widget trên màn hình khoá **không phát được âm thanh trực tiếp**; chạm vào sẽ mở app (cần mở khoá) rồi app tự đọc.
 - Widget màn hình khoá hiển thị đơn sắc, diện tích nhỏ, nên chữ dài sẽ tự thu nhỏ.
+
+## Đối chiếu với danh sách HSK 3.0 chính thức
+
+`tools/compare_hsk30.py` so `phrases.json` với [ivankra/hsk30](https://github.com/ivankra/hsk30) (dữ liệu từ Bộ Giáo dục Trung Quốc, tải `hsk30.csv` về một thư mục riêng):
+
+```bash
+python tools/compare_hsk30.py hsk30.csv Shared/phrases.json
+```
+
+Kết quả hiện tại: số từ mỗi cấp khớp chuẩn nhưng nội dung chỉ khớp một phần (HSK 1: 279 trên 505 từ chính thức nằm đúng cấp). Nhiều từ đang xếp lệch cấp, và 89 từ HSK 1 chính thức chưa có trong app (nhiều mục là biến thể như 们、第、子 trong ngoặc). Cần chọn hướng xử lý trước khi sửa dữ liệu hàng loạt.

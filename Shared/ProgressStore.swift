@@ -19,6 +19,8 @@ enum ProgressStore {
     private static let countsKey = "dayCounts"
     private static let newCountsKey = "dayNewCounts"
     private static let favoritesKey = "favoriteIDs"
+    private static let easeKey = "eases"
+    private static let intervalKey = "intervalDays"
 
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: groupID) ?? .standard
@@ -35,25 +37,50 @@ enum ProgressStore {
         if isLearned {
             ids.insert(id)
             setStreak(id, streakToLearn)
+            setInterval(id, intervals[streakToLearn])
             setDue(id, Date().addingTimeInterval(intervals[streakToLearn] * 86400))
         } else {
             ids.remove(id)
             setStreak(id, 0)
+            setInterval(id, 0)
             setDue(id, Date())
         }
         defaults.set(Array(ids), forKey: learnedKey)
     }
 
-    /// Ghi kết quả một câu ôn tập. Trả về true nếu từ vừa được tính là đã thuộc.
+    /// Mức tự đánh giá khi ôn (kiểu SM-2): quyết định khoảng cách đến lần ôn sau
+    enum Grade { case again, hard, good, easy }
+
+    static let defaultEase = 2.5
+    static let minEase = 1.3
+    static let maxIntervalDays = 180.0
+
+    /// Ghi kết quả đúng/sai (câu trắc nghiệm): đúng = Tốt, sai = Học lại
     @discardableResult
     static func record(_ id: Int, correct: Bool) -> Bool {
+        record(id, grade: correct ? .good : .again)
+    }
+
+    /// Ghi kết quả một lần ôn. Trả về true nếu từ vừa được tính là đã thuộc.
+    @discardableResult
+    static func record(_ id: Int, grade: Grade) -> Bool {
         markStudiedToday()
         incrementCount()
         if state(of: id) == .new { incrementNewWords() }
-        guard correct else {
-            // Sai thì lùi 2 bậc (không về 0), hỏi lại ngay; dưới ngưỡng thì không còn tính là đã thuộc
-            let lowered = max(0, (streaks[String(id)] ?? 0) - 2)
+
+        let key = String(id)
+        let oldStreak = streaks[key] ?? 0
+        let ease = eases[key] ?? defaultEase
+        // Từ cũ chưa có khoảng ôn riêng: suy ra từ bảng `intervals` theo số lần đúng
+        let previous = intervalDays[key] ?? intervals[min(oldStreak, intervals.count - 1)]
+
+        if grade == .again {
+            // Sai thì lùi 2 bậc (không về 0), hỏi lại ngay, giảm hệ số dễ;
+            // dưới ngưỡng thì không còn tính là đã thuộc
+            let lowered = max(0, oldStreak - 2)
             setStreak(id, lowered)
+            setEase(id, max(minEase, ease - 0.2))
+            setInterval(id, 0)
             setDue(id, Date())
             if lowered < streakToLearn {
                 var ids = learned
@@ -61,9 +88,28 @@ enum ProgressStore {
             }
             return false
         }
-        let streak = (streaks[String(id)] ?? 0) + 1
+
+        let streak = oldStreak + 1
+        var newEase = ease
+        var days = 1.0
+        switch grade {
+        case .hard:
+            newEase = max(minEase, ease - 0.15)
+            days = streak <= 1 ? 1 : previous * 1.2
+        case .good:
+            days = streak <= 1 ? 1 : (streak == 2 ? 3 : previous * ease)
+        case .easy:
+            newEase = ease + 0.15
+            days = streak <= 1 ? 3 : (streak == 2 ? 6 : previous * ease * 1.3)
+        case .again:
+            break // đã xử lý ở trên
+        }
+        days = min(maxIntervalDays, max(1, days))
+
         setStreak(id, streak)
-        setDue(id, Date().addingTimeInterval(intervals[min(streak, intervals.count - 1)] * 86400))
+        setEase(id, newEase)
+        setInterval(id, days)
+        setDue(id, Date().addingTimeInterval(days * 86400))
         if streak >= streakToLearn && !learned.contains(id) {
             var ids = learned
             ids.insert(id)
@@ -106,6 +152,26 @@ enum ProgressStore {
 
     private static var dueDates: [String: Double] {
         defaults.dictionary(forKey: dueKey) as? [String: Double] ?? [:]
+    }
+
+    private static var eases: [String: Double] {
+        defaults.dictionary(forKey: easeKey) as? [String: Double] ?? [:]
+    }
+
+    private static var intervalDays: [String: Double] {
+        defaults.dictionary(forKey: intervalKey) as? [String: Double] ?? [:]
+    }
+
+    private static func setEase(_ id: Int, _ value: Double) {
+        var all = eases
+        all[String(id)] = value
+        defaults.set(all, forKey: easeKey)
+    }
+
+    private static func setInterval(_ id: Int, _ value: Double) {
+        var all = intervalDays
+        all[String(id)] = value
+        defaults.set(all, forKey: intervalKey)
     }
 
     private static func setStreak(_ id: Int, _ value: Int) {
@@ -206,7 +272,7 @@ enum ProgressStore {
         defaults.set(Array(ids), forKey: favoritesKey)
     }
 
-    private static let allKeys = [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey, favoritesKey]
+    private static let allKeys = [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey, favoritesKey, easeKey, intervalKey]
 
     static func resetAll() {
         for key in allKeys { defaults.removeObject(forKey: key) }

@@ -77,6 +77,39 @@ final class ProgressStoreTests: XCTestCase {
         XCTAssertEqual(ProgressStore.state(of: 2), .due)
     }
 
+    /// Số ngày từ bây giờ đến lần ôn sau của một từ (qua bản chụp lịch ôn: dùng backup để đọc `dueDates`)
+    private func daysUntilDue(_ id: Int) throws -> Double {
+        let data = try XCTUnwrap(ProgressStore.exportBackup())
+        let root = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let payload = try XCTUnwrap(root["data"] as? [String: Any])
+        let due = try XCTUnwrap((payload["dueDates"] as? [String: Double])?[String(id)])
+        return (due - Date().timeIntervalSince1970) / 86400
+    }
+
+    func testGradesSpaceReviewsDifferently() throws {
+        // Lần đầu: Khó = 1 ngày, Dễ = 3 ngày
+        ProgressStore.record(20, grade: .hard)
+        ProgressStore.record(21, grade: .easy)
+        XCTAssertEqual(try daysUntilDue(20), 1, accuracy: 0.01)
+        XCTAssertEqual(try daysUntilDue(21), 3, accuracy: 0.01)
+    }
+
+    func testGoodIntervalsGrowAndAgainResets() throws {
+        ProgressStore.record(22, grade: .good)               // 1 ngày
+        ProgressStore.record(22, grade: .good)               // 3 ngày
+        XCTAssertEqual(try daysUntilDue(22), 3, accuracy: 0.01)
+        ProgressStore.record(22, grade: .good)               // 3 × 2,5 = 7,5 ngày
+        XCTAssertEqual(try daysUntilDue(22), 7.5, accuracy: 0.01)
+        ProgressStore.record(22, grade: .again)              // hỏi lại ngay
+        XCTAssertLessThan(try daysUntilDue(22), 0.01)
+        XCTAssertEqual(ProgressStore.state(of: 22), .due)
+    }
+
+    func testIntervalIsCapped() throws {
+        for _ in 0..<30 { ProgressStore.record(23, grade: .easy) }
+        XCTAssertLessThanOrEqual(try daysUntilDue(23), ProgressStore.maxIntervalDays + 0.01)
+    }
+
     func testStudyStreakAndCounts() {
         XCTAssertEqual(ProgressStore.currentStreak, 0)
         ProgressStore.record(3, correct: true)

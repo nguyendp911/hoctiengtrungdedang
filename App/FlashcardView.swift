@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Thẻ lật: vuốt phải = đã nhớ, vuốt trái = học lại, chạm vào thẻ để lật.
+/// Thẻ lật: vuốt phải = nhớ (Tốt), vuốt trái = học lại, chạm vào thẻ để lật.
+/// Bốn nút Học lại / Khó / Tốt / Dễ quyết định bao lâu sau thẻ quay lại (kiểu SM-2).
 struct FlashcardView: View {
     let pool: [Phrase]
     var onChange: () -> Void
@@ -77,6 +78,7 @@ struct FlashcardView: View {
                         }
                     }
             )
+            .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Chạm hai lần để lật thẻ")
 
@@ -84,17 +86,26 @@ struct FlashcardView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 actionButton("Học lại", icon: "arrow.counterclockwise", color: .red) {
-                    finish(phrase, correct: false)
+                    finish(phrase, grade: .again)
                 }
-                actionButton("Nghe", icon: "speaker.wave.2.fill", color: .accentColor) {
-                    Speaker.shared.speak(phrase.hanzi)
+                actionButton("Khó", icon: "tortoise.fill", color: .orange) {
+                    finish(phrase, grade: .hard)
                 }
-                actionButton("Đã nhớ", icon: "checkmark", color: .green) {
-                    finish(phrase, correct: true)
+                actionButton("Tốt", icon: "checkmark", color: .green) {
+                    finish(phrase, grade: .good)
+                }
+                actionButton("Dễ", icon: "hare.fill", color: .blue) {
+                    finish(phrase, grade: .easy)
                 }
             }
+            Button {
+                Speaker.shared.speak(phrase.hanzi)
+            } label: {
+                Label("Nghe", systemImage: "speaker.wave.2.fill").font(.subheadline)
+            }
+            .accessibilityHint("Phát âm từ này")
         }
     }
 
@@ -131,7 +142,8 @@ struct FlashcardView: View {
     private func actionButton(_ title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon)
-                .font(.subheadline.weight(.semibold))
+                .font(.footnote.weight(.semibold))
+                .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .foregroundStyle(color)
@@ -145,6 +157,7 @@ struct FlashcardView: View {
             Image(systemName: "rectangle.stack.fill.badge.person.crop")
                 .font(.system(size: 56))
                 .foregroundStyle(.tint)
+                .accessibilityHidden(true)
             Text("Hoàn thành \(deck.count) thẻ")
                 .font(.title.bold())
             Text("Đã nhớ \(remembered) · Cần học lại \(again)")
@@ -161,7 +174,12 @@ struct FlashcardView: View {
     }
 
     private func finish(_ phrase: Phrase, correct: Bool) {
-        ProgressStore.record(phrase.id, correct: correct)
+        finish(phrase, grade: correct ? .good : .again)
+    }
+
+    private func finish(_ phrase: Phrase, grade: ProgressStore.Grade) {
+        let correct = grade != .again
+        ProgressStore.record(phrase.id, grade: grade)
         if correct { remembered += 1 } else { again += 1 }
         onChange()
         withAnimation(.easeIn(duration: 0.18)) { offset = correct ? 500 : -500 }
