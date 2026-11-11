@@ -284,7 +284,7 @@ final class DifficultWordsTests: XCTestCase {
 final class PinyinInputBoundaryTests: XCTestCase {
     func testSeparatorEndsASyllable() {
         // Thanh nhẹ không có số, rồi cách ra: số của âm tiết sau không được áp vào âm tiết trước
-        XCTAssertEqual(PinyinInput.applyToneNumbers("shen2me ming2zi"), "shén me míng zi")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("shen2me ming2zi"), "shénme míngzi")
         XCTAssertEqual(PinyinInput.applyToneNumbers("xi1'an1"), "xī'ān")
     }
 }
