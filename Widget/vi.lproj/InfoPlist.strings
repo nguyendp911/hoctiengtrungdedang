@@ -1,0 +1,2 @@
+/* Vietnamese display name shown by iOS while the raw bundle metadata remains Apple-compatible. */
+"CFBundleDisplayName" = "Hanzi";

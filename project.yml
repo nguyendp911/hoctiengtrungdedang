@@ -22,7 +22,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Hán Tự
+        CFBundleDisplayName: Hanzi
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio]
@@ -52,7 +52,7 @@ targets:
     info:
       path: Widget/Info.plist
       properties:
-        CFBundleDisplayName: Hán Tự
+        CFBundleDisplayName: Hanzi
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
