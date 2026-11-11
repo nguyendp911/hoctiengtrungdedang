@@ -198,3 +198,31 @@ final class RadicalTests: XCTestCase {
         XCTAssertEqual(groups.count, 3)
     }
 }
+
+final class SpeechSettingsTests: XCTestCase {
+    func testRateIsClamped() {
+        XCTAssertEqual(SpeechSettings.clampedRate(0.0), SpeechSettings.rateRange.lowerBound)
+        XCTAssertEqual(SpeechSettings.clampedRate(0.9), SpeechSettings.rateRange.upperBound)
+        XCTAssertEqual(SpeechSettings.clampedRate(0.42), 0.42, accuracy: 0.0001)
+    }
+
+    func testSlowRateIsSlowerButNotTooSlow() {
+        for normal in stride(from: SpeechSettings.rateRange.lowerBound, through: SpeechSettings.rateRange.upperBound, by: 0.05) {
+            let slow = SpeechSettings.slowRate(from: normal)
+            XCTAssertLessThan(slow, normal)
+            XCTAssertGreaterThanOrEqual(slow, 0.22)
+        }
+    }
+
+    func testQualityRanking() {
+        XCTAssertGreaterThan(SpeechSettings.qualityRank(.premium), SpeechSettings.qualityRank(.enhanced))
+        XCTAssertGreaterThan(SpeechSettings.qualityRank(.enhanced), SpeechSettings.qualityRank(.default))
+    }
+
+    func testAvailableVoicesAreMandarinAndBestFirst() {
+        let voices = SpeechSettings.availableVoices()
+        XCTAssertTrue(voices.allSatisfy { $0.language == "zh-CN" })
+        let ranks = voices.map { SpeechSettings.qualityRank($0.quality) }
+        XCTAssertEqual(ranks, ranks.sorted(by: >))
+    }
+}

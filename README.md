@@ -171,3 +171,11 @@ python tools/compare_hsk30.py hsk30.csv Shared/phrases.json  # báo cáo khớp/
 ```
 
 Còn thiếu khoảng 3.800 từ chính thức (HSK 1: 93, HSK 2: 180, HSK 3: 166, HSK 4: 185, HSK 5: 240, HSK 6: 432, HSK 7–9: 2.509); nhiều mục là dạng ghép hoặc biến thể (一下儿、前边、第（第二）...). Mỗi từ cần cách đọc tiếng Việt, Hán Việt, nghĩa và ví dụ do người soạn viết, nên chưa thêm tự động.
+
+## Giọng đọc
+
+App dùng giọng tổng hợp có sẵn của iOS (không cần mạng, không tốn dữ liệu). Chất lượng phụ thuộc giọng cài trên máy, nên app tự chọn giọng tiếng Trung phổ thông tốt nhất (Cao cấp > Nâng cao > Cơ bản). Cài đặt › **Giọng đọc** cho phép đổi giọng, chỉnh tốc độ và nghe thử; áp dụng cho cả widget và Siri. Nút **Đọc chậm** trên thẻ từ đọc bằng khoảng 60% tốc độ thường.
+
+Để chuẩn và rõ nhất, tải giọng chất lượng cao một lần (miễn phí, cần mạng): Cài đặt iPhone › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Trung › chọn giọng, bấm tải bản **Nâng cao** hoặc **Cao cấp**. Cài đặt trong app hiện cảnh báo nếu máy mới chỉ có giọng Cơ bản.
+
+Giới hạn: giọng tổng hợp có thể đọc sai chữ đa âm khi đứng riêng (ví dụ 了, 行, 长) hoặc sai biến điệu của một số cụm.
