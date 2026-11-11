@@ -129,6 +129,8 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 - **Luyện nghe**: nghe phát âm rồi chọn nghĩa đúng.
 - **Luyện thanh điệu**: xem đường cao độ của 4 thanh, rồi nghe một chữ và chọn thanh.
 - **Điền chỗ trống**: câu ví dụ bị che một từ, chọn từ đúng trong 4 đáp án (ưu tiên đáp án nhiễu cùng số chữ, cùng cấp). Sau khi trả lời, app đọc cả câu.
+- **Gõ pinyin**: nhìn chữ Hán và nghĩa, tự gõ cách đọc. Nhận pinyin có dấu (nǐ hǎo) hoặc số thanh (ni3 hao3, dùng v cho ü: nv3 = nǚ), bỏ qua khoảng trắng, dấu nháy và chữ hoa. Đúng cả âm và thanh mới tính là đúng; đúng âm sai thanh được báo riêng.
+- **Từ hay quên**: từ bạn đã bấm Học lại hoặc trả lời sai từ 2 lần trở lên mà chưa thuộc vững được gom thành một mục riêng (chỉ hiện khi có), từ quên nhiều nhất đứng đầu. Thuộc lại thì tự rời khỏi danh sách.
 - **Học theo bộ thủ**: các chữ trong app được nhóm theo 214 bộ thủ Khang Hy (tên Hán Việt và nghĩa), bộ gặp nhiều nhất đứng đầu; tìm theo tên bộ, nghĩa hoặc chữ Hán. Chạm vào một chữ để nghe và lọc các từ có chữ đó, rồi bấm Ôn để làm trắc nghiệm riêng nhóm này. Dữ liệu bộ thủ của từng chữ (`App/Resources/radicals.json`) lấy từ trường kRSUnicode của Unihan (Unicode, giấy phép Unicode); tạo lại bằng `python tools/make_radicals_json.py Unihan_IRGSources.txt` khi thêm chữ mới.
 
 ## Siri và Phím tắt

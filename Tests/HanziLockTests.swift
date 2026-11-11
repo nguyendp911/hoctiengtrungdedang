@@ -226,3 +226,57 @@ final class SpeechSettingsTests: XCTestCase {
         XCTAssertEqual(ranks, ranks.sorted(by: >))
     }
 }
+
+final class PinyinInputTests: XCTestCase {
+    func testToneNumbersBecomeMarks() {
+        XCTAssertEqual(PinyinInput.applyToneNumbers("ni3 hao3"), "nǐ hǎo")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("xie4xie"), "xièxie")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("nv3"), "nǚ")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("liu2"), "liú")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("gui4"), "guì")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("dou1"), "dōu")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("duo1"), "duō")
+        XCTAssertEqual(PinyinInput.applyToneNumbers("lve4"), "lüè")
+    }
+
+    func testGradeAcceptsMarksAndNumbers() {
+        XCTAssertEqual(PinyinInput.grade("ni3 hao3", expected: "nǐ hǎo"), .correct)
+        XCTAssertEqual(PinyinInput.grade("nǐ hǎo", expected: "nǐ hǎo"), .correct)
+        XCTAssertEqual(PinyinInput.grade("NI3HAO3", expected: "nǐ hǎo"), .correct)
+        XCTAssertEqual(PinyinInput.grade("xie4xie", expected: "xièxie"), .correct)
+        XCTAssertEqual(PinyinInput.grade("nv3er2", expected: "nǚ'ér"), .correct)
+        XCTAssertEqual(PinyinInput.grade("xi1an1", expected: "Xī'ān"), .correct)
+    }
+
+    func testGradeTellsToneMistakeFromWrongSound() {
+        XCTAssertEqual(PinyinInput.grade("ni2 hao3", expected: "nǐ hǎo"), .wrongTone)
+        XCTAssertEqual(PinyinInput.grade("ni hao", expected: "nǐ hǎo"), .wrongTone)
+        XCTAssertEqual(PinyinInput.grade("ni3 hei3", expected: "nǐ hǎo"), .wrong)
+        XCTAssertEqual(PinyinInput.grade("   ", expected: "nǐ hǎo"), .wrong)
+    }
+
+    func testPunctuationInExpectedIsIgnored() {
+        XCTAssertEqual(PinyinInput.grade("ni3 jiao4 shen2me ming2zi", expected: "nǐ jiào shénme míngzi?"), .correct)
+    }
+}
+
+final class DifficultWordsTests: XCTestCase {
+    override func setUp() { ProgressStore.resetAll() }
+    override func tearDown() { ProgressStore.resetAll() }
+
+    func testWordBecomesDifficultAfterRepeatedLapses() {
+        ProgressStore.record(40, grade: .again)
+        XCTAssertTrue(ProgressStore.difficultIDs().isEmpty)
+        ProgressStore.record(40, grade: .again)
+        XCTAssertEqual(ProgressStore.difficultIDs(), [40])
+        XCTAssertEqual(ProgressStore.lapseCount(of: 40), 2)
+    }
+
+    func testMostForgottenComesFirstAndLearnedLeaves() {
+        for _ in 0..<2 { ProgressStore.record(41, grade: .again) }
+        for _ in 0..<3 { ProgressStore.record(42, grade: .again) }
+        XCTAssertEqual(ProgressStore.difficultIDs(), [42, 41])
+        ProgressStore.setLearned(42, true)
+        XCTAssertEqual(ProgressStore.difficultIDs(), [41])
+    }
+}

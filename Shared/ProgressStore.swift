@@ -21,6 +21,7 @@ enum ProgressStore {
     private static let favoritesKey = "favoriteIDs"
     private static let easeKey = "eases"
     private static let intervalKey = "intervalDays"
+    private static let lapseKey = "lapses"
 
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: groupID) ?? .standard
@@ -75,6 +76,7 @@ enum ProgressStore {
         let previous = intervalDays[key] ?? intervals[min(oldStreak, intervals.count - 1)]
 
         if grade == .again {
+            addLapse(id)
             // Sai thì lùi 2 bậc (không về 0), hỏi lại ngay, giảm hệ số dễ;
             // dưới ngưỡng thì không còn tính là đã thuộc
             let lowered = max(0, oldStreak - 2)
@@ -160,6 +162,40 @@ enum ProgressStore {
 
     private static var intervalDays: [String: Double] {
         defaults.dictionary(forKey: intervalKey) as? [String: Double] ?? [:]
+    }
+
+    // MARK: Từ hay quên
+
+    /// Một từ được tính là "hay quên" khi đã sai/quên từ bấy nhiêu lần trở lên
+    static let lapseThreshold = 2
+
+    private static var lapses: [String: Int] {
+        defaults.dictionary(forKey: lapseKey) as? [String: Int] ?? [:]
+    }
+
+    private static func addLapse(_ id: Int) {
+        var all = lapses
+        all[String(id), default: 0] += 1
+        defaults.set(all, forKey: lapseKey)
+    }
+
+    static func lapseCount(of id: Int) -> Int {
+        lapses[String(id)] ?? 0
+    }
+
+    /// Mã các từ hay quên mà chưa thuộc vững (đã thuộc lại thì không còn tính), từ quên nhiều nhất
+    /// và khó nhất (hệ số dễ thấp) đứng trước
+    static func difficultIDs() -> [Int] {
+        let counts = lapses
+        let easeMap = eases
+        let mastered = learned
+        return counts
+            .filter { $0.value >= lapseThreshold && !mastered.contains(Int($0.key) ?? -1) }
+            .sorted { a, b in
+                if a.value != b.value { return a.value > b.value }
+                return (easeMap[a.key] ?? defaultEase) < (easeMap[b.key] ?? defaultEase)
+            }
+            .compactMap { Int($0.key) }
     }
 
     private static func setEase(_ id: Int, _ value: Double) {
@@ -272,7 +308,7 @@ enum ProgressStore {
         defaults.set(Array(ids), forKey: favoritesKey)
     }
 
-    private static let allKeys = [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey, favoritesKey, easeKey, intervalKey]
+    private static let allKeys = [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey, favoritesKey, easeKey, intervalKey, lapseKey]
 
     static func resetAll() {
         for key in allKeys { defaults.removeObject(forKey: key) }
