@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kiểm tra phrases.json
+        run: python3 tools/validate_phrases.py
+      - name: phrases-widget.json phải khớp phrases.json
+        run: |
+          python3 tools/make_widget_json.py
+          git diff --exit-code Shared/phrases-widget.json
+
+  unit-tests:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available | grep -m1 -oE 'iPhone [0-9]+[^(]*' | sed 's/ *$//')
+          echo "Simulator: $DEVICE"
+          xcodebuild test \
+            -project HanziLock.xcodeproj \
+            -scheme HanziLock \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            CODE_SIGNING_ALLOWED=NO

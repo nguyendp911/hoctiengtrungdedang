@@ -15,7 +15,9 @@ targets:
   HanziLock:
     type: application
     platform: iOS
-    scheme: {}
+    scheme:
+      testTargets:
+        - HanziLockTests
     sources:
       - App
       - Shared
@@ -62,3 +64,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nguyendp.hanzilock.widget
+
+  HanziLockTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: HanziLock
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.nguyendp.hanzilock.tests

@@ -101,20 +101,36 @@ enum PhraseStore {
     /// tự lấy từ mới, không cần build hay cài lại.
     static let remoteURL = URL(string: "https://raw.githubusercontent.com/nguyendp911/hoctiengtrungdedang/main/Shared/phrases.json")!
 
+    /// Bản gọn (không có câu ví dụ, Hán Việt...) cho widget và Siri, nhẹ hơn ~3 lần.
+    /// Tạo bằng tools/make_widget_json.py, GitHub Actions tự cập nhật khi phrases.json đổi.
+    static let remoteWidgetURL = URL(string: "https://raw.githubusercontent.com/nguyendp911/hoctiengtrungdedang/main/Shared/phrases-widget.json")!
+
     /// Widget tự tải lại danh sách nếu bản đã lưu cũ hơn khoảng này
     static let staleAfter: TimeInterval = 6 * 60 * 60
 
-    private static var cacheURL: URL {
+    private static let fullName = "phrases"
+    private static let widgetName = "phrases-widget"
+
+    private static func cacheURL(_ name: String) -> URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("phrases.json")
+            .appendingPathComponent("\(name).json")
     }
 
     /// Bản đã tải về nếu có, không thì dùng bản đóng gói sẵn trong app
     static func load() -> [Phrase] {
-        if let list = decode(try? Data(contentsOf: cacheURL)) { return list }
-        if let url = Bundle.main.url(forResource: "phrases", withExtension: "json"),
+        load(name: fullName) ?? [.sample]
+    }
+
+    /// Bản gọn cho widget: tải về > đóng gói sẵn > bản đầy đủ (nếu thiếu cả hai)
+    static func loadForWidget() -> [Phrase] {
+        load(name: widgetName) ?? load()
+    }
+
+    private static func load(name: String) -> [Phrase]? {
+        if let list = decode(try? Data(contentsOf: cacheURL(name))) { return list }
+        if let url = Bundle.main.url(forResource: name, withExtension: "json"),
            let list = decode(try? Data(contentsOf: url)) { return list }
-        return [.sample]
+        return nil
     }
 
     private static func decode(_ data: Data?) -> [Phrase]? {
@@ -128,19 +144,30 @@ enum PhraseStore {
     /// Tải danh sách mới từ GitHub và lưu lại. File lỗi thì giữ bản cũ.
     @discardableResult
     static func refresh() async throws -> [Phrase] {
-        let request = URLRequest(url: remoteURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        try await download(remoteURL, name: fullName)
+    }
+
+    /// Như `refresh()` nhưng cho bản gọn của widget
+    @discardableResult
+    static func refreshWidget() async throws -> [Phrase] {
+        try await download(remoteWidgetURL, name: widgetName)
+    }
+
+    private static func download(_ url: URL, name: String) async throws -> [Phrase] {
+        let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200, let list = decode(data) else {
             throw URLError(.cannotParseResponse)
         }
-        try data.write(to: cacheURL, options: .atomic)
+        try data.write(to: cacheURL(name), options: .atomic)
         return list
     }
 
+    /// Dùng trong widget: chỉ tải bản gọn, và chỉ khi bản đã lưu cũ
     static func refreshIfStale() async {
-        let saved = try? cacheURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        let saved = try? cacheURL(widgetName).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         if let saved, Date().timeIntervalSince(saved) < staleAfter { return }
-        _ = try? await refresh()
+        _ = try? await refreshWidget()
     }
 
     /// Các chủ đề theo thứ tự xuất hiện trong file

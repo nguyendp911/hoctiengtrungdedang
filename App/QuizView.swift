@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Ôn tập trắc nghiệm. Chế độ `mixed`: nhìn chữ chọn nghĩa hoặc nhìn nghĩa chọn chữ.
 /// Chế độ `listening`: nghe phát âm rồi chọn nghĩa đúng.
+/// Chế độ `cloze`: câu ví dụ bị che một từ, chọn từ điền vào chỗ trống.
 /// Đúng liên tiếp `ProgressStore.streakToLearn` lần thì từ được tính là đã thuộc.
 struct QuizView: View {
-    enum Mode { case mixed, listening }
+    enum Mode { case mixed, listening, cloze }
 
     /// Từ được ôn
     let pool: [Phrase]
@@ -24,9 +25,18 @@ struct QuizView: View {
     @State private var chosen: Int?
     @State private var correctCount = 0
     @State private var newlyLearned = 0
+    @State private var started = false
     @ScaledMetric(relativeTo: .largeTitle) private var hanziSize: CGFloat = 52
 
-    enum Kind { case hanziToMeaning, meaningToHanzi, listening }
+    enum Kind { case hanziToMeaning, meaningToHanzi, listening, cloze }
+
+    private var defaultTitle: String {
+        switch mode {
+        case .mixed: return "Ôn tập"
+        case .listening: return "Luyện nghe"
+        case .cloze: return "Điền chỗ trống"
+        }
+    }
 
     struct Question {
         let phrase: Phrase
@@ -38,7 +48,12 @@ struct QuizView: View {
         NavigationStack {
             Group {
                 if questions.isEmpty {
-                    ProgressView()
+                    if started {
+                        ContentUnavailableView("Chưa có câu để luyện", systemImage: "text.badge.xmark",
+                                               description: Text("Các từ đã chọn chưa có câu ví dụ phù hợp."))
+                    } else {
+                        ProgressView()
+                    }
                 } else if index < questions.count {
                     questionView(questions[index])
                 } else {
@@ -46,7 +61,7 @@ struct QuizView: View {
                 }
             }
             .padding()
-            .navigationTitle(title ?? (mode == .listening ? "Luyện nghe" : "Ôn tập"))
+            .navigationTitle(title ?? defaultTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -73,8 +88,9 @@ struct QuizView: View {
                     Button {
                         answer(i, for: q)
                     } label: {
-                        Text(q.kind == .meaningToHanzi ? option.hanzi : option.meaningVi)
-                            .font(q.kind == .meaningToHanzi ? .title2.weight(.semibold) : .body.weight(.medium))
+                        let showHanzi = q.kind == .meaningToHanzi || q.kind == .cloze
+                        Text(showHanzi ? option.hanzi : option.meaningVi)
+                            .font(showHanzi ? .title2.weight(.semibold) : .body.weight(.medium))
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
                     .buttonStyle(.bordered)
@@ -87,6 +103,10 @@ struct QuizView: View {
                 VStack(spacing: 6) {
                     Text("\(q.phrase.hanzi) · \(q.phrase.pinyin) · \(q.phrase.readingVi)")
                         .font(.subheadline)
+                    if q.kind == .cloze, let example = q.phrase.example {
+                        Text(example.zh).font(.subheadline.weight(.semibold))
+                        Text(example.pinyin).font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button(index + 1 < questions.count ? "Câu tiếp" : "Xem kết quả") {
                         chosen = nil
                         index += 1
@@ -140,6 +160,21 @@ struct QuizView: View {
                 .accessibilityLabel("Nghe lại")
                 Text("Nghe và chọn nghĩa đúng").foregroundStyle(.secondary)
             }
+        case .cloze:
+            VStack(spacing: 10) {
+                Text(Cloze.sentence(for: q.phrase) ?? Cloze.blank)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.5)
+                if let vi = q.phrase.example?.vi {
+                    Text(vi)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Text("Chọn từ điền vào chỗ trống").font(.footnote).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
         }
     }
 
@@ -188,20 +223,28 @@ struct QuizView: View {
         let correct = q.options[i].id == q.phrase.id
         if correct { correctCount += 1 }
         if ProgressStore.record(q.phrase.id, correct: correct) { newlyLearned += 1 }
-        Speaker.shared.speak(q.phrase.hanzi)
+        // Điền chỗ trống: đọc cả câu để nghe từ trong ngữ cảnh
+        Speaker.shared.speak(q.kind == .cloze ? (q.phrase.example?.zh ?? q.phrase.hanzi) : q.phrase.hanzi)
         onChange()
     }
 
     private func start() {
         let learned = ProgressStore.learned
         let snap = ProgressStore.snapshot()
+        // Điền chỗ trống chỉ dùng từ có câu ví dụ chứa đúng từ đó
+        let source = mode == .cloze ? pool.filter { Cloze.sentence(for: $0) != nil } : pool
         // Từ đến hạn ôn trước, rồi từ mới, cuối cùng là từ chưa đến hạn
-        let due = pool.filter { snap.state(of: $0.id) == .due }.shuffled()
-        let new = pool.filter { snap.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
-        let later = pool.filter { !due.contains($0) && !new.contains($0) }.shuffled()
+        let due = source.filter { snap.state(of: $0.id) == .due }.shuffled()
+        let new = source.filter { snap.state(of: $0.id) == .new && !learned.contains($0.id) }.shuffled()
+        let dueOrNew = Set((due + new).map(\.id))
+        let later = source.filter { !dueOrNew.contains($0.id) }.shuffled()
         let picked = Array((due + new + later).prefix(length))
 
         questions = picked.map { phrase in
+            if mode == .cloze {
+                let options = ([phrase] + Cloze.distractors(for: phrase, in: all)).shuffled()
+                return Question(phrase: phrase, options: options, kind: .cloze)
+            }
             let kind: Kind = mode == .listening ? .listening : (Bool.random() ? .hanziToMeaning : .meaningToHanzi)
             func key(_ p: Phrase) -> String { kind == .meaningToHanzi ? p.hanzi : p.meaningVi }
             var seen: Set<String> = [key(phrase)]
@@ -216,5 +259,6 @@ struct QuizView: View {
         chosen = nil
         correctCount = 0
         newlyLearned = 0
+        started = true
     }
 }

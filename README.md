@@ -15,6 +15,9 @@ Yêu cầu: iOS 17 trở lên.
 project.yml              Cấu hình project (XcodeGen)
 Shared/Phrase.swift      Model + chọn câu theo giờ (dùng chung app & widget)
 Shared/phrases.json      Danh sách từ/câu – sửa/thêm ở đây
+Shared/phrases-widget.json  Bản gọn cho widget (tự sinh, đừng sửa tay)
+Tests/                   Unit test (XCTest)
+tools/                   Script kiểm tra và sinh dữ liệu
 App/                     App chính: thẻ từ, nút phát âm, danh sách
 Widget/HanziWidget.swift Widget màn hình khoá / màn hình chính
 ```
@@ -89,7 +92,7 @@ Lộ trình theo chuẩn HSK 3.0: **HSK 0** (nhập môn phiên âm, không ph�
 - **Học bài / Kiểm tra bài:** mỗi bài có thẻ lật và bài kiểm tra riêng.
 - **Thi thử HSK:** 20 câu từ vựng trộn của cấp đó, đạt từ 60%.
 
-Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, HSK 5: 1071, HSK 6: 1140, đúng bằng số lượng của chuẩn 3.0; HSK 7–9 mới có 105 trên 5636 từ. Các từ HSK hiện có được xếp cấp xấp xỉ theo kinh nghiệm học, chưa đối chiếu từng từ với danh sách chính thức của HSK 3.0. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
+Số từ trong app theo đúng danh sách HSK 3.0 chính thức: HSK 1: 480 trên 500, HSK 2: 742 trên 772, HSK 3: 950 trên 973, HSK 4: 788 trên 1000, HSK 5: 821 trên 1071, HSK 6: 696 trên 1140, HSK 7–9: 3.103 trên khoảng 5.600; phần còn thiếu đang được bổ sung dần. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
 
 ## Ba tab (Học, Ôn tập, Cài đặt)
 
@@ -97,7 +100,7 @@ Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, 
 - **Ôn tập**: chuỗi ngày học, số từ cần ôn hôm nay, tiến độ theo chủ đề (chạm vào chủ đề để ôn riêng chủ đề đó).
 - **Cài đặt**: nhắc học mỗi ngày, cập nhật từ, xoá tiến độ.
 
-Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần (1, 2, 4, 7, 15 ngày), trả lời sai thì hỏi lại ngay.
+Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần kiểu SM-2: thẻ lật có bốn nút Học lại / Khó / Tốt / Dễ, khoảng ôn lần lượt khoảng 1, 3 rồi nhân với hệ số dễ của từng từ (tối đa 180 ngày); Khó nhân nhỏ hơn, Dễ nhân lớn hơn, Học lại thì hỏi lại ngay và lùi 2 bậc (không về 0). Câu trắc nghiệm đúng tính là Tốt, sai là Học lại.
 
 ## Luyện nói
 
@@ -113,7 +116,7 @@ Widget màn hình chính (nhỏ và vừa) có nút ✓ để đánh dấu **Đ�
 
 ## Luyện viết
 
-Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Thư viện Hanzi Writer (MIT) và dữ liệu nét của 392 chữ đã đóng gói sẵn trong app (`App/Resources`), nên luyện viết chạy được khi không có mạng. Chữ mới thêm sau này mà chưa có sẵn thì app tự tải từ mạng. Dữ liệu nét lấy từ gói `hanzi-writer-data`, xuất xứ từ dự án Make Me a Hanzi (font Arphic, giấy phép Arphic Public License), xem điều khoản trước khi phát hành công khai.
+Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Thư viện Hanzi Writer (MIT) và dữ liệu nét của 3.092 chữ (đủ cho toàn bộ từ trong app) đã đóng gói sẵn trong app (`App/Resources`), nên luyện viết chạy được khi không có mạng. Chữ mới thêm sau này mà chưa có sẵn thì app tự tải từ mạng. Dữ liệu nét lấy từ gói `hanzi-writer-data`, xuất xứ từ dự án Make Me a Hanzi (font Arphic, giấy phép Arphic Public License), xem điều khoản trước khi phát hành công khai.
 
 ## Tìm kiếm và yêu thích
 
@@ -122,9 +125,13 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 ## Luyện tập khác (tab Ôn tập)
 
 - **Mục tiêu hằng ngày** và biểu đồ 7 ngày: đổi số câu mục tiêu trong Cài đặt.
-- **Thẻ lật**: vuốt phải khi đã nhớ, vuốt trái để học lại, chạm để lật.
+- **Thẻ lật**: chạm để lật, rồi tự chấm Học lại / Khó / Tốt / Dễ (vuốt phải = Tốt, vuốt trái = Học lại).
 - **Luyện nghe**: nghe phát âm rồi chọn nghĩa đúng.
 - **Luyện thanh điệu**: xem đường cao độ của 4 thanh, rồi nghe một chữ và chọn thanh.
+- **Điền chỗ trống**: câu ví dụ bị che một từ, chọn từ đúng trong 4 đáp án (ưu tiên đáp án nhiễu cùng số chữ, cùng cấp). Sau khi trả lời, app đọc cả câu.
+- **Gõ pinyin**: nhìn chữ Hán và nghĩa, tự gõ cách đọc. Nhận pinyin có dấu (nǐ hǎo) hoặc số thanh (ni3 hao3, dùng v cho ü: nv3 = nǚ), bỏ qua khoảng trắng, dấu nháy và chữ hoa. Đúng cả âm và thanh mới tính là đúng; đúng âm sai thanh được báo riêng.
+- **Từ hay quên**: từ bạn đã bấm Học lại hoặc trả lời sai từ 2 lần trở lên mà chưa thuộc vững được gom thành một mục riêng (chỉ hiện khi có), từ quên nhiều nhất đứng đầu. Thuộc lại thì tự rời khỏi danh sách.
+- **Học theo bộ thủ**: các chữ trong app được nhóm theo 214 bộ thủ Khang Hy (tên Hán Việt và nghĩa), bộ gặp nhiều nhất đứng đầu; tìm theo tên bộ, nghĩa hoặc chữ Hán. Chạm vào một chữ để nghe và lọc các từ có chữ đó, rồi bấm Ôn để làm trắc nghiệm riêng nhóm này. Dữ liệu bộ thủ của từng chữ (`App/Resources/radicals.json`) lấy từ trường kRSUnicode của Unihan (Unicode, giấy phép Unicode); tạo lại bằng `python tools/make_radicals_json.py Unihan_IRGSources.txt` khi thêm chữ mới.
 
 ## Siri và Phím tắt
 
@@ -132,9 +139,57 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 
 ## Dữ liệu từ vựng
 
-`Shared/phrases.json` có 340 từ: 65 từ theo chủ đề và 275 từ HSK 1, 2, 3 (chọn lọc, chưa đủ toàn bộ danh sách chính thức). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, chỉ kiểm tra được số âm tiết, nên nên rà lại bằng từ điển.
+`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, 7.163 từ nằm đúng cấp HSK 1–9 theo danh sách chính thức, và 3.482 từ ở chủ đề **Ngoài HSK 3.0** (từ hữu ích nhưng không có trong danh sách chính thức; vẫn học và ôn được, tiến độ cũ được giữ vì `id` không đổi). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển.
+
+Sau khi sửa file, chạy kiểm tra (CI cũng chạy tự động):
+
+```bash
+python tools/validate_phrases.py
+```
+
+Widget và Siri dùng bản gọn `phrases-widget.json` (khoảng 1,3 MB thay vì 3,8 MB) để tiết kiệm bộ nhớ. File này do GitHub Actions tự tạo lại khi `phrases.json` đổi; chạy tay bằng `python tools/make_widget_json.py`.
+
+## Sao lưu tiến độ
+
+Cài đặt › **Sao lưu tiến độ** xuất file JSON (lưu vào Tệp hoặc iCloud Drive); **Khôi phục từ file** nạp lại, dùng khi cài lại app hoặc đổi máy.
+
+## Kiểm thử
+
+Unit test nằm trong `Tests/` (từ vựng, tìm kiếm, lịch ôn, sao lưu). Chạy trong Xcode bằng Cmd+U, hoặc để GitHub Actions chạy khi push/PR (`.github/workflows/test.yml`).
 
 ## Giới hạn của iOS
 
 - Widget trên màn hình khoá **không phát được âm thanh trực tiếp**; chạm vào sẽ mở app (cần mở khoá) rồi app tự đọc.
 - Widget màn hình khoá hiển thị đơn sắc, diện tích nhỏ, nên chữ dài sẽ tự thu nhỏ.
+
+## Đối chiếu với danh sách HSK 3.0 chính thức
+
+Cấp HSK của từng từ đã được xếp lại theo [ivankra/hsk30](https://github.com/ivankra/hsk30) (dữ liệu từ Bộ Giáo dục Trung Quốc; chú ý bản quyền của dữ liệu gốc chưa rõ ràng nên file này không đưa vào repo, hãy tải `hsk30.csv` về một thư mục riêng):
+
+```bash
+python tools/relevel_hsk.py hsk30.csv          # xem thống kê
+python tools/relevel_hsk.py hsk30.csv --write  # ghi lại phrases.json
+python tools/compare_hsk30.py hsk30.csv Shared/phrases.json  # báo cáo khớp/thiếu theo cấp
+```
+
+Còn thiếu khoảng 3.800 từ chính thức (HSK 1: 93, HSK 2: 180, HSK 3: 166, HSK 4: 185, HSK 5: 240, HSK 6: 432, HSK 7–9: 2.509); nhiều mục là dạng ghép hoặc biến thể (一下儿、前边、第（第二）...). Mỗi từ cần cách đọc tiếng Việt, Hán Việt, nghĩa và ví dụ do người soạn viết, nên chưa thêm tự động.
+
+## Giọng đọc
+
+App dùng giọng tổng hợp có sẵn của iOS (không cần mạng, không tốn dữ liệu). Chất lượng phụ thuộc giọng cài trên máy, nên app tự chọn giọng tiếng Trung phổ thông tốt nhất (Cao cấp > Nâng cao > Cơ bản). Cài đặt › **Giọng đọc** cho phép đổi giọng, chỉnh tốc độ và nghe thử; áp dụng cho cả widget và Siri. Nút **Đọc chậm** trên thẻ từ đọc bằng khoảng 60% tốc độ thường.
+
+Để chuẩn và rõ nhất, tải giọng chất lượng cao một lần (miễn phí, cần mạng): Cài đặt iPhone › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Trung › chọn giọng, bấm tải bản **Nâng cao** hoặc **Cao cấp**. Cài đặt trong app hiện cảnh báo nếu máy mới chỉ có giọng Cơ bản.
+
+Giới hạn: giọng tổng hợp có thể đọc sai chữ đa âm khi đứng riêng (ví dụ 了, 行, 长) hoặc sai biến điệu của một số cụm.
+
+## Thêm từ mới theo lô
+
+Soạn file văn bản, mỗi dòng một từ gồm 8 trường cách nhau bởi dấu `|`: chữ Hán, pinyin, cách đọc tiếng Việt, Hán Việt, nghĩa, câu ví dụ (Hán), câu ví dụ (pinyin), câu ví dụ (nghĩa Việt). Rồi:
+
+```bash
+python tools/add_words.py 1 words.txt --write   # 1 = HSK 1 ... 6 = HSK 6, 7 = HSK 7-9
+python tools/make_widget_json.py
+python tools/validate_phrases.py
+```
+
+Từ trùng chữ Hán với từ đã có bị bỏ qua. Đợt này đã bổ sung 417 từ chính thức còn thiếu của HSK 1, 2 và 3 (HSK 1: 499/505, HSK 2: 742/769, HSK 3: 951/967 so với danh sách chuẩn; phần còn lại phần lớn là dạng ghép như 第二, 朋友们). HSK 4 đến 9 vẫn còn thiếu khoảng 3.400 từ.

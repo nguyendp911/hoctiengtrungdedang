@@ -4,7 +4,7 @@ import Charts
 /// Tab "Ôn tập": chuỗi ngày, mục tiêu hôm nay, từ cần ôn, các chế độ luyện, tiến độ theo chủ đề
 struct ReviewView: View {
     enum Sheet: Identifiable {
-        case quiz([Phrase]), listening, flashcards, tones
+        case quiz([Phrase]), listening, flashcards, tones, cloze, radicals, typing, difficult([Phrase])
 
         var id: String {
             switch self {
@@ -12,6 +12,10 @@ struct ReviewView: View {
             case .listening: return "listening"
             case .flashcards: return "flashcards"
             case .tones: return "tones"
+            case .cloze: return "cloze"
+            case .radicals: return "radicals"
+            case .typing: return "typing"
+            case .difficult: return "difficult"
             }
         }
     }
@@ -33,8 +37,20 @@ struct ReviewView: View {
                 Section("Hôm nay") { todayCard }
                 Section { dueCard }
                 Section("Luyện tập khác") {
-                    modeRow("Thẻ lật", subtitle: "Vuốt phải khi đã nhớ, vuốt trái để học lại",
+                    modeRow("Thẻ lật", subtitle: "Tự chấm Học lại / Khó / Tốt / Dễ",
                             icon: "rectangle.stack.fill", color: .purple) { sheet = .flashcards }
+                    modeRow("Điền chỗ trống", subtitle: "Chọn từ còn thiếu trong câu ví dụ",
+                            icon: "text.cursor", color: .indigo) { sheet = .cloze }
+                    modeRow("Gõ pinyin", subtitle: "Nhìn chữ Hán, tự gõ cách đọc và thanh điệu",
+                            icon: "keyboard.fill", color: .pink) { sheet = .typing }
+                    if !difficultWords.isEmpty {
+                        modeRow("Từ hay quên", subtitle: "\(difficultWords.count) từ bạn hay sai, ôn riêng cho chắc",
+                                icon: "exclamationmark.triangle.fill", color: .red) {
+                            sheet = .difficult(difficultWords)
+                        }
+                    }
+                    modeRow("Học theo bộ thủ", subtitle: "Nhóm chữ theo 214 bộ thủ, ôn theo từng bộ",
+                            icon: "square.grid.3x3.fill", color: .brown) { sheet = .radicals }
                     modeRow("Luyện nghe", subtitle: "Nghe phát âm rồi chọn nghĩa đúng",
                             icon: "ear.fill", color: .teal) { sheet = .listening }
                     modeRow("Luyện thanh điệu", subtitle: "Phân biệt 4 thanh bằng tai",
@@ -58,8 +74,22 @@ struct ReviewView: View {
                 FlashcardView(pool: model.phrases) { model.reloadProgress() }
             case .tones:
                 ToneDrillView(pool: model.phrases) { model.reloadProgress() }
+            case .cloze:
+                QuizView(pool: model.phrases, all: model.phrases, mode: .cloze) { model.reloadProgress() }
+            case .radicals:
+                RadicalsView(phrases: model.phrases) { model.reloadProgress() }
+            case .typing:
+                PinyinTypingView(pool: model.phrases) { model.reloadProgress() }
+            case .difficult(let pool):
+                QuizView(pool: pool, all: model.phrases, title: "Từ hay quên") { model.reloadProgress() }
             }
         }
+    }
+
+    /// Các từ hay sai và chưa thuộc vững, từ khó nhất đứng trước
+    private var difficultWords: [Phrase] {
+        let byID = Dictionary(model.phrases.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return ProgressStore.difficultIDs().compactMap { byID[$0] }
     }
 
     // MARK: Chuỗi ngày

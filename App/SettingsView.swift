@@ -1,15 +1,23 @@
 import SwiftUI
 import UIKit
+import AVFoundation
+import UniformTypeIdentifiers
 
 /// Tab "Cài đặt": nhắc học, cập nhật từ, hướng dẫn widget, xoá tiến độ
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("reminderEnabled") private var reminderEnabled = false
     @AppStorage("reminderMinutes") private var reminderMinutes = 20 * 60
     @AppStorage("dailyGoal") private var dailyGoal = 10
     @AppStorage("newPerDay") private var newPerDay = 5
     @State private var permissionDenied = false
     @State private var confirmReset = false
+    @AppStorage(SpeechSettings.voiceKey, store: SpeechSettings.store) private var voiceID = ""
+    @AppStorage(SpeechSettings.rateKey, store: SpeechSettings.store) private var speechRate = Double(SpeechSettings.defaultRate)
+    @State private var voices: [AVSpeechSynthesisVoice] = []
+    @State private var importing = false
+    @State private var backupMessage: String?
 
     private var timeBinding: Binding<Date> {
         Binding(
@@ -25,6 +33,51 @@ struct SettingsView: View {
         )
     }
 
+    private var voiceSection: some View {
+        Section {
+            Picker("Giọng đọc", selection: $voiceID) {
+                Text("Tự động (giọng tốt nhất)").tag("")
+                ForEach(voices, id: \.identifier) { voice in
+                    Text("\(voice.name) · \(SpeechSettings.qualityLabel(voice.quality))").tag(voice.identifier)
+                }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Tốc độ")
+                    Spacer()
+                    Text(speechRate < 0.38 ? "Chậm" : (speechRate > 0.47 ? "Nhanh" : "Vừa"))
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $speechRate,
+                       in: Double(SpeechSettings.rateRange.lowerBound)...Double(SpeechSettings.rateRange.upperBound))
+                    .accessibilityLabel("Tốc độ đọc")
+            }
+            Button {
+                Speaker.shared.speak(SpeechSettings.sampleText)
+            } label: {
+                Label("Nghe thử", systemImage: "speaker.wave.2.fill")
+            }
+            if let current = SpeechSettings.currentVoice(), SpeechSettings.qualityRank(current.quality) < 2 {
+                Label("Máy đang dùng giọng cơ bản, nghe kém tự nhiên. Tải giọng Nâng cao để rõ và chuẩn hơn.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+        } header: {
+            Text("Giọng đọc")
+        } footer: {
+            Text("Để nghe chuẩn và rõ nhất, tải giọng tiếng Trung chất lượng cao một lần (miễn phí, cần mạng): Cài đặt iPhone › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Trung › chọn giọng và bấm tải bản Nâng cao hoặc Cao cấp. Quay lại app, giọng mới tự được dùng. Giọng và tốc độ áp dụng cho cả widget và Siri.")
+        }
+    }
+
+    /// Ghi bản sao lưu ra file tạm để chia sẻ
+    private func backupFileURL() -> URL? {
+        guard let data = ProgressStore.exportBackup() else { return nil }
+        let day = Date().formatted(.iso8601.year().month().day())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("HanTu-tiendo-\(day).json")
+        return (try? data.write(to: url, options: .atomic)) != nil ? url : nil
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -36,6 +89,8 @@ struct SettingsView: View {
                 } footer: {
                     Text("Từ mới mỗi ngày dùng cho tab Lộ trình và ước tính ngày hoàn thành mỗi cấp HSK. Mỗi câu trả lời trong ôn tập, thẻ lật hoặc luyện nghe được tính là một câu.")
                 }
+
+                voiceSection
 
                 Section {
                     Toggle("Nhắc học mỗi ngày", isOn: $reminderEnabled)
@@ -86,12 +141,42 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    if let url = backupFileURL() {
+                        ShareLink(item: url) { Label("Sao lưu tiến độ", systemImage: "square.and.arrow.up") }
+                    }
+                    Button { importing = true } label: { Label("Khôi phục từ file", systemImage: "square.and.arrow.down") }
+                    if let backupMessage {
+                        Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Sao lưu")
+                } footer: {
+                    Text("Lưu file vào Tệp hoặc iCloud Drive để không mất tiến độ khi cài lại app hay đổi máy. Khôi phục sẽ ghi đè tiến độ hiện tại.")
+                }
+
+                Section {
                     Button("Xoá tiến độ học", role: .destructive) { confirmReset = true }
                 } footer: {
                     Text("Đặt lại các từ đã thuộc, lịch ôn và chuỗi ngày học.")
                 }
             }
             .navigationTitle("Cài đặt")
+            .onAppear { voices = SpeechSettings.availableVoices() }
+            .onChange(of: scenePhase) {
+                // Quay lại từ Cài đặt iPhone sau khi tải giọng mới: làm mới danh sách
+                if scenePhase == .active { voices = SpeechSettings.availableVoices() }
+            }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+                guard case .success(let url) = result else { return }
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                if let data = try? Data(contentsOf: url), ProgressStore.importBackup(data) {
+                    model.reloadProgress()
+                    backupMessage = "Đã khôi phục tiến độ."
+                } else {
+                    backupMessage = "File sao lưu không hợp lệ."
+                }
+            }
             .confirmationDialog("Xoá toàn bộ tiến độ học?", isPresented: $confirmReset, titleVisibility: .visible) {
                 Button("Xoá tiến độ", role: .destructive) {
                     ProgressStore.resetAll()

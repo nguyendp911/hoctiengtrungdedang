@@ -12,7 +12,7 @@ struct PhraseProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectTopicIntent, in context: Context) async -> PhraseEntry {
-        let list = PhraseStore.load()
+        let list = PhraseStore.loadForWidget()
         let topic = configuration.topic?.filter
         let learned = ProgressStore.learned
         return PhraseEntry(date: .now, phrase: PhraseStore.phrase(at: .now, topic: topic, in: list, learned: learned))
@@ -21,7 +21,7 @@ struct PhraseProvider: AppIntentTimelineProvider {
     func timeline(for configuration: SelectTopicIntent, in context: Context) async -> Timeline<PhraseEntry> {
         // Lấy từ mới trên GitHub (nếu bản đã lưu quá cũ), lỗi mạng thì dùng bản cũ
         await PhraseStore.refreshIfStale()
-        let list = PhraseStore.load()
+        let list = PhraseStore.loadForWidget()
         let topic = configuration.topic?.filter
         let learned = ProgressStore.learned
 
