@@ -17,7 +17,8 @@ for i, p in enumerate(data):
             errors.append(f"dòng {i}: thiếu '{key}' (id={p.get('id')})")
     chars = sum(1 for c in p.get("hanzi", "") if "一" <= c <= "鿿")
     syllables = len(p.get("readingVi", "").replace("-", " ").split())
-    if chars and chars != syllables:
+    erhua = "儿" in p.get("hanzi", "") or "〇" in p.get("hanzi", "")  # 儿化 và 〇 có số âm tiết khác số chữ
+    if chars and chars != syllables and not erhua:
         warnings.append(f"id {p.get('id')} {p.get('hanzi')}: {chars} chữ Hán nhưng cách đọc có {syllables} âm tiết")
 
 for pid, n in Counter(p["id"] for p in data if "id" in p).items():

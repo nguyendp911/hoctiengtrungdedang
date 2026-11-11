@@ -92,7 +92,7 @@ Lộ trình theo chuẩn HSK 3.0: **HSK 0** (nhập môn phiên âm, không ph�
 - **Học bài / Kiểm tra bài:** mỗi bài có thẻ lật và bài kiểm tra riêng.
 - **Thi thử HSK:** 20 câu từ vựng trộn của cấp đó, đạt từ 60%.
 
-Số từ trong app theo đúng danh sách HSK 3.0 chính thức: HSK 1: 393 trên 500, HSK 2: 571 trên 772, HSK 3: 791 trên 973, HSK 4: 788 trên 1000, HSK 5: 821 trên 1071, HSK 6: 696 trên 1140, HSK 7–9: 3.103 trên khoảng 5.600; phần còn thiếu đang được bổ sung dần. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
+Số từ trong app theo đúng danh sách HSK 3.0 chính thức: HSK 1: 480 trên 500, HSK 2: 742 trên 772, HSK 3: 950 trên 973, HSK 4: 788 trên 1000, HSK 5: 821 trên 1071, HSK 6: 696 trên 1140, HSK 7–9: 3.103 trên khoảng 5.600; phần còn thiếu đang được bổ sung dần. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
 
 ## Ba tab (Học, Ôn tập, Cài đặt)
 
@@ -181,3 +181,15 @@ App dùng giọng tổng hợp có sẵn của iOS (không cần mạng, không 
 Để chuẩn và rõ nhất, tải giọng chất lượng cao một lần (miễn phí, cần mạng): Cài đặt iPhone › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Trung › chọn giọng, bấm tải bản **Nâng cao** hoặc **Cao cấp**. Cài đặt trong app hiện cảnh báo nếu máy mới chỉ có giọng Cơ bản.
 
 Giới hạn: giọng tổng hợp có thể đọc sai chữ đa âm khi đứng riêng (ví dụ 了, 行, 长) hoặc sai biến điệu của một số cụm.
+
+## Thêm từ mới theo lô
+
+Soạn file văn bản, mỗi dòng một từ gồm 8 trường cách nhau bởi dấu `|`: chữ Hán, pinyin, cách đọc tiếng Việt, Hán Việt, nghĩa, câu ví dụ (Hán), câu ví dụ (pinyin), câu ví dụ (nghĩa Việt). Rồi:
+
+```bash
+python tools/add_words.py 1 words.txt --write   # 1 = HSK 1 ... 6 = HSK 6, 7 = HSK 7-9
+python tools/make_widget_json.py
+python tools/validate_phrases.py
+```
+
+Từ trùng chữ Hán với từ đã có bị bỏ qua. Đợt này đã bổ sung 417 từ chính thức còn thiếu của HSK 1, 2 và 3 (HSK 1: 499/505, HSK 2: 742/769, HSK 3: 951/967 so với danh sách chuẩn; phần còn lại phần lớn là dạng ghép như 第二, 朋友们). HSK 4 đến 9 vẫn còn thiếu khoảng 3.400 từ.
