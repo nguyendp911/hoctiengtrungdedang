@@ -125,9 +125,11 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 ## Luyện tập khác (tab Ôn tập)
 
 - **Mục tiêu hằng ngày** và biểu đồ 7 ngày: đổi số câu mục tiêu trong Cài đặt.
-- **Thẻ lật**: vuốt phải khi đã nhớ, vuốt trái để học lại, chạm để lật.
+- **Thẻ lật**: chạm để lật, rồi tự chấm Học lại / Khó / Tốt / Dễ (vuốt phải = Tốt, vuốt trái = Học lại).
 - **Luyện nghe**: nghe phát âm rồi chọn nghĩa đúng.
 - **Luyện thanh điệu**: xem đường cao độ của 4 thanh, rồi nghe một chữ và chọn thanh.
+- **Điền chỗ trống**: câu ví dụ bị che một từ, chọn từ đúng trong 4 đáp án (ưu tiên đáp án nhiễu cùng số chữ, cùng cấp). Sau khi trả lời, app đọc cả câu.
+- **Học theo bộ thủ**: các chữ trong app được nhóm theo 214 bộ thủ Khang Hy (tên Hán Việt và nghĩa), bộ gặp nhiều nhất đứng đầu; tìm theo tên bộ, nghĩa hoặc chữ Hán. Chạm vào một chữ để nghe và lọc các từ có chữ đó, rồi bấm Ôn để làm trắc nghiệm riêng nhóm này. Dữ liệu bộ thủ của từng chữ (`App/Resources/radicals.json`) lấy từ trường kRSUnicode của Unihan (Unicode, giấy phép Unicode); tạo lại bằng `python tools/make_radicals_json.py Unihan_IRGSources.txt` khi thêm chữ mới.
 
 ## Siri và Phím tắt
 

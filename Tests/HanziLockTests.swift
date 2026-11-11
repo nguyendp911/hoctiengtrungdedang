@@ -142,3 +142,59 @@ final class ProgressStoreTests: XCTestCase {
         XCTAssertFalse(ProgressStore.importBackup(Data("không phải json".utf8)))
     }
 }
+
+final class ClozeTests: XCTestCase {
+    private func make(_ id: Int, _ hanzi: String, example: String? = nil, topic: String = "HSK 1") -> Phrase {
+        Phrase(id: id, hanzi: hanzi, pinyin: "p", readingVi: "v", meaningVi: "m\(id)", topic: topic,
+               example: example.map { Phrase.Example(zh: $0, pinyin: "p", vi: "v") })
+    }
+
+    func testSentenceBlanksTheWord() {
+        XCTAssertEqual(Cloze.sentence(for: make(1, "谢谢", example: "谢谢你的帮助。")), "＿＿你的帮助。")
+    }
+
+    func testSentenceNeedsContext() {
+        XCTAssertNil(Cloze.sentence(for: make(1, "你好", example: "你好！")))
+        XCTAssertNil(Cloze.sentence(for: make(2, "你好", example: "早上好。")))
+        XCTAssertNil(Cloze.sentence(for: make(3, "你好")))
+    }
+
+    func testDistractorsPreferSameLengthAndAreUnique() {
+        let target = make(1, "学习")
+        let pool = [target, make(2, "工作"), make(3, "吃饭"), make(4, "书"), make(5, "老师"), make(6, "工作")]
+        let options = Cloze.distractors(for: target, in: pool)
+        XCTAssertEqual(options.count, 3)
+        XCTAssertFalse(options.contains { $0.id == target.id })
+        XCTAssertEqual(Set(options.map(\.hanzi)).count, 3)
+        XCTAssertTrue(options.allSatisfy { $0.hanzi.count == 2 })
+    }
+}
+
+final class RadicalTests: XCTestCase {
+    func testTableHas214RadicalsInOrder() {
+        XCTAssertEqual(RadicalStore.all.count, 214)
+        XCTAssertEqual(RadicalStore.all.map(\.no), Array(1...214))
+        XCTAssertEqual(RadicalStore.radical(no: 149)?.name, "Ngôn")
+        XCTAssertNil(RadicalStore.radical(no: 0))
+    }
+
+    func testBundledMapKnowsCommonCharacters() {
+        XCTAssertEqual(RadicalStore.radical(of: "说")?.no, 149)
+        XCTAssertEqual(RadicalStore.radical(of: "妈")?.no, 38)
+        XCTAssertEqual(RadicalStore.radical(of: "河")?.no, 85)
+    }
+
+    func testGroupsCollectCharsAndWords() {
+        func make(_ id: Int, _ hanzi: String) -> Phrase {
+            Phrase(id: id, hanzi: hanzi, pinyin: "p", readingVi: "v", meaningVi: "m", topic: "T")
+        }
+        let words = [make(1, "妈妈"), make(2, "好"), make(3, "河水"), make(4, "你好")]
+        let map = ["妈": 38, "好": 38, "河": 85, "水": 85, "你": 9]
+        let groups = RadicalStore.groups(in: words, map: map)
+        XCTAssertEqual(groups.first?.radical.no, 38)              // nhiều chữ nhất (妈, 好), số bộ nhỏ hơn bộ 85
+        XCTAssertEqual(groups.first?.chars, ["妈", "好"])
+        XCTAssertEqual(groups.first?.words.map(\.id), [1, 2, 4])
+        XCTAssertEqual(groups.first { $0.radical.no == 85 }?.words.map(\.id), [3])
+        XCTAssertEqual(groups.count, 3)
+    }
+}
