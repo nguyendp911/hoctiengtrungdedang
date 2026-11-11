@@ -92,7 +92,7 @@ Lộ trình theo chuẩn HSK 3.0: **HSK 0** (nhập môn phiên âm, không ph�
 - **Học bài / Kiểm tra bài:** mỗi bài có thẻ lật và bài kiểm tra riêng.
 - **Thi thử HSK:** 20 câu từ vựng trộn của cấp đó, đạt từ 60%.
 
-Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, HSK 5: 1071, HSK 6: 1140, đúng bằng số lượng của chuẩn 3.0; HSK 7–9 mới có 105 trên 5636 từ. Các từ HSK hiện có được xếp cấp xấp xỉ theo kinh nghiệm học, chưa đối chiếu từng từ với danh sách chính thức của HSK 3.0. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
+Số từ trong app theo đúng danh sách HSK 3.0 chính thức: HSK 1: 393 trên 500, HSK 2: 571 trên 772, HSK 3: 791 trên 973, HSK 4: 788 trên 1000, HSK 5: 821 trên 1071, HSK 6: 696 trên 1140, HSK 7–9: 3.103 trên khoảng 5.600; phần còn thiếu đang được bổ sung dần. Mỗi từ HSK trong `phrases.json` có thêm `unitNo` và `unit` để xếp vào bài; từ thêm sau chỉ cần ghi hai trường này và chủ đề là `HSK 1` ... `HSK 6`, `HSK 7-9`.
 
 ## Ba tab (Học, Ôn tập, Cài đặt)
 
@@ -135,7 +135,7 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 
 ## Dữ liệu từ vựng
 
-`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, HSK 1 (479 trên 500 từ), HSK 2 đến 6 đủ số lượng và HSK 7–9 (5.210 trên khoảng 5.600 từ). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển. Cấp HSK của từng từ chưa đối chiếu với danh sách chính thức của HSK 3.0.
+`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, 6.563 từ nằm đúng cấp HSK 1–9 theo danh sách chính thức, và 3.482 từ ở chủ đề **Ngoài HSK 3.0** (từ hữu ích nhưng không có trong danh sách chính thức; vẫn học và ôn được, tiến độ cũ được giữ vì `id` không đổi). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển.
 
 Sau khi sửa file, chạy kiểm tra (CI cũng chạy tự động):
 
@@ -160,10 +160,12 @@ Unit test nằm trong `Tests/` (từ vựng, tìm kiếm, lịch ôn, sao lưu).
 
 ## Đối chiếu với danh sách HSK 3.0 chính thức
 
-`tools/compare_hsk30.py` so `phrases.json` với [ivankra/hsk30](https://github.com/ivankra/hsk30) (dữ liệu từ Bộ Giáo dục Trung Quốc, tải `hsk30.csv` về một thư mục riêng):
+Cấp HSK của từng từ đã được xếp lại theo [ivankra/hsk30](https://github.com/ivankra/hsk30) (dữ liệu từ Bộ Giáo dục Trung Quốc; chú ý bản quyền của dữ liệu gốc chưa rõ ràng nên file này không đưa vào repo, hãy tải `hsk30.csv` về một thư mục riêng):
 
 ```bash
-python tools/compare_hsk30.py hsk30.csv Shared/phrases.json
+python tools/relevel_hsk.py hsk30.csv          # xem thống kê
+python tools/relevel_hsk.py hsk30.csv --write  # ghi lại phrases.json
+python tools/compare_hsk30.py hsk30.csv Shared/phrases.json  # báo cáo khớp/thiếu theo cấp
 ```
 
-Kết quả hiện tại: số từ mỗi cấp khớp chuẩn nhưng nội dung chỉ khớp một phần (HSK 1: 279 trên 505 từ chính thức nằm đúng cấp). Nhiều từ đang xếp lệch cấp, và 89 từ HSK 1 chính thức chưa có trong app (nhiều mục là biến thể như 们、第、子 trong ngoặc). Cần chọn hướng xử lý trước khi sửa dữ liệu hàng loạt.
+Còn thiếu khoảng 3.800 từ chính thức (HSK 1: 93, HSK 2: 180, HSK 3: 166, HSK 4: 185, HSK 5: 240, HSK 6: 432, HSK 7–9: 2.509); nhiều mục là dạng ghép hoặc biến thể (一下儿、前边、第（第二）...). Mỗi từ cần cách đọc tiếng Việt, Hán Việt, nghĩa và ví dụ do người soạn viết, nên chưa thêm tự động.
