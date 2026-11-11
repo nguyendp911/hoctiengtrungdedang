@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 /// Tab "Cài đặt": nhắc học, cập nhật từ, hướng dẫn widget, xoá tiến độ
 struct SettingsView: View {
@@ -10,6 +11,8 @@ struct SettingsView: View {
     @AppStorage("newPerDay") private var newPerDay = 5
     @State private var permissionDenied = false
     @State private var confirmReset = false
+    @State private var importing = false
+    @State private var backupMessage: String?
 
     private var timeBinding: Binding<Date> {
         Binding(
@@ -23,6 +26,14 @@ struct SettingsView: View {
                 Task { await Reminder.schedule(minutes: reminderMinutes, phrases: model.phrases) }
             }
         )
+    }
+
+    /// Ghi bản sao lưu ra file tạm để chia sẻ
+    private func backupFileURL() -> URL? {
+        guard let data = ProgressStore.exportBackup() else { return nil }
+        let day = Date().formatted(.iso8601.year().month().day())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("HanTu-tiendo-\(day).json")
+        return (try? data.write(to: url, options: .atomic)) != nil ? url : nil
     }
 
     var body: some View {
@@ -86,12 +97,37 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    if let url = backupFileURL() {
+                        ShareLink(item: url) { Label("Sao lưu tiến độ", systemImage: "square.and.arrow.up") }
+                    }
+                    Button { importing = true } label: { Label("Khôi phục từ file", systemImage: "square.and.arrow.down") }
+                    if let backupMessage {
+                        Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Sao lưu")
+                } footer: {
+                    Text("Lưu file vào Tệp hoặc iCloud Drive để không mất tiến độ khi cài lại app hay đổi máy. Khôi phục sẽ ghi đè tiến độ hiện tại.")
+                }
+
+                Section {
                     Button("Xoá tiến độ học", role: .destructive) { confirmReset = true }
                 } footer: {
                     Text("Đặt lại các từ đã thuộc, lịch ôn và chuỗi ngày học.")
                 }
             }
             .navigationTitle("Cài đặt")
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+                guard case .success(let url) = result else { return }
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                if let data = try? Data(contentsOf: url), ProgressStore.importBackup(data) {
+                    model.reloadProgress()
+                    backupMessage = "Đã khôi phục tiến độ."
+                } else {
+                    backupMessage = "File sao lưu không hợp lệ."
+                }
+            }
             .confirmationDialog("Xoá toàn bộ tiến độ học?", isPresented: $confirmReset, titleVisibility: .visible) {
                 Button("Xoá tiến độ", role: .destructive) {
                     ProgressStore.resetAll()

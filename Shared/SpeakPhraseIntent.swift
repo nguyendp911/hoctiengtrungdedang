@@ -16,7 +16,7 @@ struct SpeakPhraseIntent: AudioPlaybackIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        if let phrase = PhraseStore.load().first(where: { $0.id == phraseID }) {
+        if let phrase = PhraseStore.loadForWidget().first(where: { $0.id == phraseID }) {
             Speaker.shared.speak(phrase.hanzi)
         }
         return .result()

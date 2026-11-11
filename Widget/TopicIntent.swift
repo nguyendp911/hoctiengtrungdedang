@@ -26,7 +26,7 @@ struct TopicQuery: EntityQuery {
 
     func suggestedEntities() async throws -> [TopicEntity] {
         await PhraseStore.refreshIfStale()
-        let topics = PhraseStore.topics(in: PhraseStore.load())
+        let topics = PhraseStore.topics(in: PhraseStore.loadForWidget())
         return [TopicEntity(id: TopicEntity.allID)] + topics.map(TopicEntity.init)
     }
 

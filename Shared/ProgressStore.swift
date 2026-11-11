@@ -8,7 +8,7 @@ enum ProgressStore {
     /// Trả lời đúng liên tiếp bấy nhiêu lần thì tính là đã thuộc
     static let streakToLearn = 3
     /// Số ngày đến lần ôn tiếp theo, theo số lần đúng liên tiếp (0, 1, 2, ...)
-    static let intervals: [Double] = [0, 1, 2, 4, 7, 15]
+    static let intervals: [Double] = [0, 1, 2, 4, 7, 15, 30, 60]
 
     enum State { case new, due, later }
 
@@ -51,7 +51,14 @@ enum ProgressStore {
         incrementCount()
         if state(of: id) == .new { incrementNewWords() }
         guard correct else {
-            setLearned(id, false)
+            // Sai thì lùi 2 bậc (không về 0), hỏi lại ngay; dưới ngưỡng thì không còn tính là đã thuộc
+            let lowered = max(0, (streaks[String(id)] ?? 0) - 2)
+            setStreak(id, lowered)
+            setDue(id, Date())
+            if lowered < streakToLearn {
+                var ids = learned
+                if ids.remove(id) != nil { defaults.set(Array(ids), forKey: learnedKey) }
+            }
             return false
         }
         let streak = (streaks[String(id)] ?? 0) + 1
@@ -199,9 +206,34 @@ enum ProgressStore {
         defaults.set(Array(ids), forKey: favoritesKey)
     }
 
+    private static let allKeys = [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey, favoritesKey]
+
     static func resetAll() {
-        for key in [learnedKey, streakKey, dueKey, daysKey, countsKey, newCountsKey] {
-            defaults.removeObject(forKey: key)
+        for key in allKeys { defaults.removeObject(forKey: key) }
+    }
+
+    // MARK: Sao lưu / khôi phục
+
+    /// Toàn bộ tiến độ dưới dạng JSON, để lưu vào Tệp/iCloud Drive rồi khôi phục trên máy khác
+    static func exportBackup() -> Data? {
+        var payload: [String: Any] = [:]
+        for key in allKeys {
+            if let value = defaults.object(forKey: key) { payload[key] = value }
         }
+        let wrapper: [String: Any] = ["version": 1, "exportedAt": Date().timeIntervalSince1970, "data": payload]
+        return try? JSONSerialization.data(withJSONObject: wrapper, options: [.prettyPrinted, .sortedKeys])
+    }
+
+    /// Khôi phục từ file sao lưu (ghi đè tiến độ hiện tại). Trả về false nếu file không hợp lệ.
+    @discardableResult
+    static func importBackup(_ data: Data) -> Bool {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              root["version"] as? Int == 1,
+              let payload = root["data"] as? [String: Any]
+        else { return false }
+        for key in allKeys {
+            if let value = payload[key] { defaults.set(value, forKey: key) } else { defaults.removeObject(forKey: key) }
+        }
+        return true
     }
 }

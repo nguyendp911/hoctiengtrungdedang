@@ -15,6 +15,9 @@ Yêu cầu: iOS 17 trở lên.
 project.yml              Cấu hình project (XcodeGen)
 Shared/Phrase.swift      Model + chọn câu theo giờ (dùng chung app & widget)
 Shared/phrases.json      Danh sách từ/câu – sửa/thêm ở đây
+Shared/phrases-widget.json  Bản gọn cho widget (tự sinh, đừng sửa tay)
+Tests/                   Unit test (XCTest)
+tools/                   Script kiểm tra và sinh dữ liệu
 App/                     App chính: thẻ từ, nút phát âm, danh sách
 Widget/HanziWidget.swift Widget màn hình khoá / màn hình chính
 ```
@@ -97,7 +100,7 @@ Số từ trong app hiện là HSK 1: 500, HSK 2: 772, HSK 3: 973, HSK 4: 1000, 
 - **Ôn tập**: chuỗi ngày học, số từ cần ôn hôm nay, tiến độ theo chủ đề (chạm vào chủ đề để ôn riêng chủ đề đó).
 - **Cài đặt**: nhắc học mỗi ngày, cập nhật từ, xoá tiến độ.
 
-Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần (1, 2, 4, 7, 15 ngày), trả lời sai thì hỏi lại ngay.
+Lịch ôn ngắt quãng: trả lời đúng thì lần hỏi lại cách xa dần (1, 2, 4, 7, 15, 30, 60 ngày), trả lời sai thì hỏi lại ngay và lùi 2 bậc (không về 0).
 
 ## Luyện nói
 
@@ -113,7 +116,7 @@ Widget màn hình chính (nhỏ và vừa) có nút ✓ để đánh dấu **Đ�
 
 ## Luyện viết
 
-Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Thư viện Hanzi Writer (MIT) và dữ liệu nét của 392 chữ đã đóng gói sẵn trong app (`App/Resources`), nên luyện viết chạy được khi không có mạng. Chữ mới thêm sau này mà chưa có sẵn thì app tự tải từ mạng. Dữ liệu nét lấy từ gói `hanzi-writer-data`, xuất xứ từ dự án Make Me a Hanzi (font Arphic, giấy phép Arphic Public License), xem điều khoản trước khi phát hành công khai.
+Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo nét mờ, hoặc tự viết không gợi ý; app chấm từng nét. Thư viện Hanzi Writer (MIT) và dữ liệu nét của 3.092 chữ (đủ cho toàn bộ từ trong app) đã đóng gói sẵn trong app (`App/Resources`), nên luyện viết chạy được khi không có mạng. Chữ mới thêm sau này mà chưa có sẵn thì app tự tải từ mạng. Dữ liệu nét lấy từ gói `hanzi-writer-data`, xuất xứ từ dự án Make Me a Hanzi (font Arphic, giấy phép Arphic Public License), xem điều khoản trước khi phát hành công khai.
 
 ## Tìm kiếm và yêu thích
 
@@ -132,7 +135,23 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 
 ## Dữ liệu từ vựng
 
-`Shared/phrases.json` có 340 từ: 65 từ theo chủ đề và 275 từ HSK 1, 2, 3 (chọn lọc, chưa đủ toàn bộ danh sách chính thức). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, chỉ kiểm tra được số âm tiết, nên nên rà lại bằng từ điển.
+`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, HSK 1 (479 trên 500 từ), HSK 2 đến 6 đủ số lượng và HSK 7–9 (5.210 trên khoảng 5.600 từ). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển. Cấp HSK của từng từ chưa đối chiếu với danh sách chính thức của HSK 3.0.
+
+Sau khi sửa file, chạy kiểm tra (CI cũng chạy tự động):
+
+```bash
+python tools/validate_phrases.py
+```
+
+Widget và Siri dùng bản gọn `phrases-widget.json` (khoảng 1,3 MB thay vì 3,8 MB) để tiết kiệm bộ nhớ. File này do GitHub Actions tự tạo lại khi `phrases.json` đổi; chạy tay bằng `python tools/make_widget_json.py`.
+
+## Sao lưu tiến độ
+
+Cài đặt › **Sao lưu tiến độ** xuất file JSON (lưu vào Tệp hoặc iCloud Drive); **Khôi phục từ file** nạp lại, dùng khi cài lại app hoặc đổi máy.
+
+## Kiểm thử
+
+Unit test nằm trong `Tests/` (từ vựng, tìm kiếm, lịch ôn, sao lưu). Chạy trong Xcode bằng Cmd+U, hoặc để GitHub Actions chạy khi push/PR (`.github/workflows/test.yml`).
 
 ## Giới hạn của iOS
 

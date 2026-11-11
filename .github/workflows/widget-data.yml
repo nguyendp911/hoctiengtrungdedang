@@ -1,0 +1,26 @@
+name: Cập nhật dữ liệu widget
+
+# Khi sửa Shared/phrases.json trên GitHub, tự tạo lại bản gọn cho widget
+on:
+  push:
+    branches: [main]
+    paths: [Shared/phrases.json, tools/make_widget_json.py]
+
+permissions:
+  contents: write
+
+jobs:
+  slim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/make_widget_json.py
+      - name: Commit nếu có thay đổi
+        run: |
+          if ! git diff --quiet Shared/phrases-widget.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Shared/phrases-widget.json
+            git commit -m "Cập nhật phrases-widget.json"
+            git push
+          fi
