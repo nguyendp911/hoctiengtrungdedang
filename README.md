@@ -135,7 +135,7 @@ Bấm **Luyện viết** trên thẻ từ: xem thứ tự nét, tập tô theo n
 
 ## Dữ liệu từ vựng
 
-`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, 6.563 từ nằm đúng cấp HSK 1–9 theo danh sách chính thức, và 3.482 từ ở chủ đề **Ngoài HSK 3.0** (từ hữu ích nhưng không có trong danh sách chính thức; vẫn học và ôn được, tiến độ cũ được giữ vì `id` không đổi). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển.
+`Shared/phrases.json` có 10.710 từ: 65 từ theo chủ đề, 7.163 từ nằm đúng cấp HSK 1–9 theo danh sách chính thức, và 3.482 từ ở chủ đề **Ngoài HSK 3.0** (từ hữu ích nhưng không có trong danh sách chính thức; vẫn học và ôn được, tiến độ cũ được giữ vì `id` không đổi). Pinyin được đối chiếu tự động với thư viện pypinyin; âm Hán Việt và cách đọc tiếng Việt do người soạn viết, nên rà lại bằng từ điển.
 
 Sau khi sửa file, chạy kiểm tra (CI cũng chạy tự động):
 
