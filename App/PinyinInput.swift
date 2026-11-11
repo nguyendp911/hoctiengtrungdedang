@@ -56,8 +56,12 @@ enum PinyinInput {
         for c in text {
             if let d = c.wholeNumberValue, (0...5).contains(d) {
                 flush(tone: (1...4).contains(d) ? d : nil)
-            } else {
+            } else if c.isLetter {
                 syllable.append(c)
+            } else {
+                // Khoảng trắng, dấu nháy, gạch nối, dấu câu kết thúc một âm tiết (thanh nhẹ không có số)
+                flush(tone: nil)
+                result.append(c)
             }
         }
         flush(tone: nil)
